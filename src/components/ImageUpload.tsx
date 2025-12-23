@@ -6,7 +6,12 @@ const loadPdfJs = async () => {
   if (!pdfjsLib) {
     pdfjsLib = await import('pdfjs-dist');
     // Set up PDF.js worker - use base path for GitHub Pages compatibility
-    const basePath = import.meta.env.BASE_URL || '/';
+    // Get base path from current location (works for both local dev and GitHub Pages)
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    // If path is like /layout/, basePath will be /layout/, otherwise /
+    const basePath = pathParts.length > 0 && pathParts[0] !== 'index.html' 
+      ? `/${pathParts[0]}/` 
+      : '/';
     pdfjsLib.GlobalWorkerOptions.workerSrc = `${basePath}pdf.worker.min.mjs`;
   }
   return pdfjsLib;
