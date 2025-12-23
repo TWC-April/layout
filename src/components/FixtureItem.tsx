@@ -30,7 +30,7 @@ export const FixtureItem: React.FC<FixtureItemProps> = ({ fixture }) => {
       ref={drag}
       className={`fixture-item ${isDragging ? 'dragging' : ''} ${hasImage ? 'has-image' : ''}`}
       style={{ 
-        backgroundColor: hasImage ? '#f8f9fa' : fixture.color 
+        backgroundColor: hasImage ? '#f8f9fa' : (fixture.color || '#e0e0e0')
       }}
     >
       {hasImage ? (
@@ -40,7 +40,7 @@ export const FixtureItem: React.FC<FixtureItemProps> = ({ fixture }) => {
           className="fixture-image"
         />
       ) : (
-        <div className="fixture-color-preview" style={{ backgroundColor: fixture.color }} />
+        <div className="fixture-color-preview" style={{ backgroundColor: fixture.color || '#e0e0e0' }} />
       )}
       <div className="fixture-name">{fixture.name}</div>
       <div className="fixture-dimensions">

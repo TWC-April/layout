@@ -1,4 +1,4 @@
-# Layout Designer
+# Layout
 
 A web application for uploading floor plans, calibrating scale using dimension lines, and placing fixtures to check if they fit.
 

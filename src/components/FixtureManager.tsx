@@ -38,7 +38,7 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
             <div
               className={`fixture-preview ${fixture.icon ? 'has-image' : ''}`}
               style={{ 
-                backgroundColor: fixture.icon ? '#f8f9fa' : fixture.color,
+                backgroundColor: fixture.icon ? '#f8f9fa' : (fixture.color || '#e0e0e0'),
                 cursor: 'pointer',
               }}
               onClick={() => onFixtureClick(fixture)}

@@ -17,7 +17,6 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
   const [name, setName] = useState(initialFixture?.name || '');
   const [width, setWidth] = useState(initialFixture?.width.toString() || '');
   const [height, setHeight] = useState(initialFixture?.height.toString() || '');
-  const [color, setColor] = useState(initialFixture?.color || '#3498db');
   const [imagePreview, setImagePreview] = useState<string | null>(initialFixture?.icon || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +60,6 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
         name: name.trim(),
         width: widthNum,
         height: heightNum,
-        color,
         icon: imagePreview || undefined,
       });
       // Reset form if not editing
@@ -69,7 +67,6 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
         setName('');
         setWidth('');
         setHeight('');
-        setColor('#3498db');
         setImagePreview(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
@@ -162,26 +159,6 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
                 />
               </label>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>
-              Color:
-              <div className="color-input-group">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                />
-                <input
-                  type="text"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  placeholder="#3498db"
-                  pattern="^#[0-9A-Fa-f]{6}$"
-                />
-              </div>
-            </label>
           </div>
 
           <div className="form-actions">

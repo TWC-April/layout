@@ -116,7 +116,6 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
           width: widthNum,
           height: heightNum,
           icon: pending.imageData,
-          color: '#3498db', // Default color, can be changed later
         });
       }
     }
@@ -140,7 +139,6 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
         width: widthNum,
         height: heightNum,
         icon: pending.imageData,
-        color: '#3498db',
       });
       removePendingFixture(index);
     }

@@ -13,7 +13,7 @@ export interface Fixture {
   name: string;
   width: number; // in millimeters
   height: number;
-  color: string;
+  color?: string; // optional, for backward compatibility
   icon?: string;
   isCustom?: boolean; // true for user-created fixtures
   createdAt?: number; // timestamp for custom fixtures
