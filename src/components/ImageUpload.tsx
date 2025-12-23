@@ -5,8 +5,9 @@ let pdfjsLib: any = null;
 const loadPdfJs = async () => {
   if (!pdfjsLib) {
     pdfjsLib = await import('pdfjs-dist');
-    // Set up PDF.js worker - use local worker file from public folder
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+    // Set up PDF.js worker - use base path for GitHub Pages compatibility
+    const basePath = import.meta.env.BASE_URL || '/';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `${basePath}pdf.worker.min.mjs`;
   }
   return pdfjsLib;
 };
