@@ -5,14 +5,11 @@ let pdfjsLib: any = null;
 const loadPdfJs = async () => {
   if (!pdfjsLib) {
     pdfjsLib = await import('pdfjs-dist');
-    // Set up PDF.js worker - use base path for GitHub Pages compatibility
-    // Detect base path from current location
-    const pathname = window.location.pathname;
-    // Remove trailing index.html if present, then get base path
-    const cleanPath = pathname.replace(/\/index\.html$/, '');
-    // Extract base path (e.g., /layout/ from /layout/ or /layout/index.html)
-    const pathParts = cleanPath.split('/').filter(Boolean);
-    const basePath = pathParts.length > 0 ? `/${pathParts[0]}/` : '/';
+    // Set up PDF.js worker - use Vite's BASE_URL for GitHub Pages compatibility
+    // BASE_URL is set by Vite based on the base config in vite.config.ts
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    // Ensure baseUrl ends with / for proper path joining
+    const basePath = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     pdfjsLib.GlobalWorkerOptions.workerSrc = `${basePath}pdf.worker.min.mjs`;
   }
   return pdfjsLib;
