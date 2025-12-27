@@ -36,18 +36,9 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
   // Add global mouse up handler to ensure crop selection completes even if mouse leaves container
   useEffect(() => {
     const handleGlobalMouseUp = (e: MouseEvent) => {
-      if (isSelecting && cropStart && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const pos = {
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        };
-        // Clamp to container bounds
-        const clampedPos = {
-          x: Math.max(0, Math.min(rect.width, pos.x)),
-          y: Math.max(0, Math.min(rect.height, pos.y)),
-        };
-        setCropEnd(clampedPos);
+      if (isSelecting && cropStart && imageRef.current) {
+        const pos = getMousePos(e);
+        setCropEnd(pos);
         setIsSelecting(false);
       }
     };
@@ -58,13 +49,23 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
     }
   }, [isSelecting, cropStart]);
 
-  const getMousePos = (e: React.MouseEvent) => {
-    if (!containerRef.current) return { x: 0, y: 0 };
-    const rect = containerRef.current.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+  const getMousePos = (e: React.MouseEvent | MouseEvent) => {
+    if (!imageRef.current) return { x: 0, y: 0 };
+    
+    // Get mouse position relative to the image element, not the container
+    const imageRect = imageRef.current.getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    
+    // Calculate position relative to image
+    let x = clientX - imageRect.left;
+    let y = clientY - imageRect.top;
+    
+    // Clamp to image bounds
+    x = Math.max(0, Math.min(imageRect.width, x));
+    y = Math.max(0, Math.min(imageRect.height, y));
+    
+    return { x, y };
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -104,7 +105,7 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
       return;
     }
 
-    // Calculate crop area
+    // Calculate crop area (coordinates are already relative to displayed image)
     const x1 = Math.min(cropStart.x, cropEnd.x);
     const y1 = Math.min(cropStart.y, cropEnd.y);
     const x2 = Math.max(cropStart.x, cropEnd.x);
@@ -118,11 +119,17 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
       return;
     }
 
-    // Calculate scale factor between displayed image and actual image
+    // Get actual image dimensions
     const img = new Image();
     img.onload = () => {
-      const scaleX = img.width / imageSize.width;
-      const scaleY = img.height / imageSize.height;
+      // Calculate scale factor between displayed image size and actual image size
+      const displayedWidth = imageSize.width;
+      const displayedHeight = imageSize.height;
+      const actualWidth = img.width;
+      const actualHeight = img.height;
+      
+      const scaleX = actualWidth / displayedWidth;
+      const scaleY = actualHeight / displayedHeight;
 
       // Create canvas for cropping
       const canvas = document.createElement('canvas');
@@ -132,17 +139,23 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
         return;
       }
 
-      // Set canvas size to crop dimensions
-      canvas.width = cropWidth * scaleX;
-      canvas.height = cropHeight * scaleY;
+      // Calculate actual crop dimensions in source image coordinates
+      const sourceX = x1 * scaleX;
+      const sourceY = y1 * scaleY;
+      const sourceWidth = cropWidth * scaleX;
+      const sourceHeight = cropHeight * scaleY;
 
-      // Draw cropped portion
+      // Set canvas size to crop dimensions (use actual pixel dimensions)
+      canvas.width = Math.round(sourceWidth);
+      canvas.height = Math.round(sourceHeight);
+
+      // Draw cropped portion from source image
       ctx.drawImage(
         img,
-        x1 * scaleX,
-        y1 * scaleY,
-        cropWidth * scaleX,
-        cropHeight * scaleY,
+        Math.round(sourceX),
+        Math.round(sourceY),
+        Math.round(sourceWidth),
+        Math.round(sourceHeight),
         0,
         0,
         canvas.width,
@@ -190,24 +203,26 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
           }
         }}
       >
-        <img
-          ref={imageRef}
-          src={imageUrl}
-          alt="Floor plan to crop"
-          className="crop-tool-image"
-          onLoad={handleImageLoad}
-        />
-        {cropArea && (
-          <div
-            className="crop-selection"
-            style={{
-              left: cropArea.left,
-              top: cropArea.top,
-              width: cropArea.width,
-              height: cropArea.height,
-            }}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img
+            ref={imageRef}
+            src={imageUrl}
+            alt="Floor plan to crop"
+            className="crop-tool-image"
+            onLoad={handleImageLoad}
           />
-        )}
+          {cropArea && (
+            <div
+              className="crop-selection"
+              style={{
+                left: `${cropArea.left}px`,
+                top: `${cropArea.top}px`,
+                width: `${cropArea.width}px`,
+                height: `${cropArea.height}px`,
+              }}
+            />
+          )}
+        </div>
       </div>
       <div className="crop-tool-actions">
         <button
