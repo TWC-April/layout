@@ -103,10 +103,11 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       // Only zoom if Ctrl/Cmd key is held (standard zoom behavior)
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        // Slower zoom: smaller increment per scroll
+        const delta = e.deltaY > 0 ? -0.05 : 0.05;
         setZoomLevel((prev) => {
           const newZoom = Math.max(0.1, Math.min(5.0, prev + delta));
-          return Math.round(newZoom * 10) / 10; // Round to 1 decimal
+          return Math.round(newZoom * 20) / 20; // Round to 2 decimals (0.05 increments)
         });
       }
     };
@@ -116,11 +117,11 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   }, []);
 
   const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(5.0, Math.round((prev + 0.1) * 10) / 10));
+    setZoomLevel((prev) => Math.min(5.0, Math.round((prev + 0.05) * 20) / 20));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(0.1, Math.round((prev - 0.1) * 10) / 10));
+    setZoomLevel((prev) => Math.max(0.1, Math.round((prev - 0.05) * 20) / 20));
   };
 
   const handleZoomFit = () => {
