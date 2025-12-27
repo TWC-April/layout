@@ -40,14 +40,40 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   const fixtureRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const lastStateUpdateTime = useRef<number>(0);
   const isDeletingRef = useRef<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const [baseImageSize, setBaseImageSize] = useState<{ width: number; height: number } | null>(null);
 
   const handleImageLoad = useCallback(() => {
     if (imageRef.current) {
-      setDisplayedImageSize({
-        width: imageRef.current.offsetWidth,
-        height: imageRef.current.offsetHeight,
-      });
+      const size = {
+        width: imageRef.current.naturalWidth,
+        height: imageRef.current.naturalHeight,
+      };
+      setBaseImageSize(size);
+      // Calculate displayed size based on container and zoom
+      updateDisplayedSize(size);
     }
+  }, []);
+
+  const updateDisplayedSize = useCallback((baseSize: { width: number; height: number }) => {
+    if (!canvasRef.current || !imageRef.current) return;
+    
+    const container = canvasRef.current;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    // Calculate scale to fit image in container (base size, without zoom)
+    const scaleToFit = Math.min(
+      containerWidth / baseSize.width,
+      containerHeight / baseSize.height,
+      1.0 // Don't scale up beyond 100%
+    );
+    
+    // Displayed size is the base size scaled to fit (zoom is applied via CSS transform)
+    setDisplayedImageSize({
+      width: baseSize.width * scaleToFit,
+      height: baseSize.height * scaleToFit,
+    });
   }, []);
 
   React.useEffect(() => {
@@ -61,6 +87,45 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       }
     };
   }, [handleImageLoad]);
+
+  // Update displayed size when container resizes (but not when zoom changes - zoom is CSS transform)
+  React.useEffect(() => {
+    if (baseImageSize) {
+      updateDisplayedSize(baseImageSize);
+    }
+  }, [baseImageSize, updateDisplayedSize]);
+
+  // Handle mouse wheel zoom
+  React.useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (!canvasRef.current?.contains(e.target as Node)) return;
+      
+      // Only zoom if Ctrl/Cmd key is held (standard zoom behavior)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoomLevel((prev) => {
+          const newZoom = Math.max(0.1, Math.min(5.0, prev + delta));
+          return Math.round(newZoom * 10) / 10; // Round to 1 decimal
+        });
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(5.0, Math.round((prev + 0.1) * 10) / 10));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(0.1, Math.round((prev - 0.1) * 10) / 10));
+  };
+
+  const handleZoomFit = () => {
+    setZoomLevel(1.0);
+  };
 
 
   const handleFixtureMouseDown = useCallback((fixture: PlacedFixture, e: React.MouseEvent, isRotationHandle: boolean = false) => {
@@ -120,21 +185,27 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       // Normal click: prepare for drag/move
       if (!scaleInfo || !displayedImageSize || !canvasRef.current) return;
       
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-      const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+      const canvasContentRect = canvasRef.current.querySelector('.canvas-content')?.getBoundingClientRect();
+      if (!canvasContentRect) return;
+      
+      // Adjust mouse coordinates for zoom (CSS transform)
+      const mouseX = (e.clientX - canvasContentRect.left) / zoomLevel;
+      const mouseY = (e.clientY - canvasContentRect.top) / zoomLevel;
+      
+      const scaleX = displayedImageSize.width / scaleInfo.imageWidth / zoomLevel;
+      const scaleY = displayedImageSize.height / scaleInfo.imageHeight / zoomLevel;
       const scaledX = fixture.position.x * scaleX;
       const scaledY = fixture.position.y * scaleY;
       
       setDragOffset({
-        x: e.clientX - rect.left - scaledX,
-        y: e.clientY - rect.top - scaledY,
+        x: mouseX - scaledX,
+        y: mouseY - scaledY,
       });
       setDraggedFixture(fixture);
       setSelectedFixtureId(fixture.id);
       tempDragPosition.current = null;
     }
-  }, [scaleInfo, displayedImageSize, onFixtureDelete]);
+  }, [scaleInfo, displayedImageSize, onFixtureDelete, zoomLevel]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     // Don't handle movement if we're deleting
@@ -147,17 +218,19 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       const fixture = fixtures.find(f => f.id === selectedFixtureId);
       if (!fixture) return;
 
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-      const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+      const canvasContentRect = canvasRef.current.querySelector('.canvas-content')?.getBoundingClientRect();
+      if (!canvasContentRect) return;
+
+      const scaleX = displayedImageSize.width / scaleInfo.imageWidth / zoomLevel;
+      const scaleY = displayedImageSize.height / scaleInfo.imageHeight / zoomLevel;
       const scaledX = fixture.position.x * scaleX;
       const scaledY = fixture.position.y * scaleY;
       
-      // Get center of fixture
+      // Get center of fixture (accounting for zoom)
       const widthPx = fixture.width * scaleInfo.pixelsPerMillimeter * scaleX;
       const heightPx = fixture.height * scaleInfo.pixelsPerMillimeter * scaleY;
-      const centerX = rect.left + scaledX + widthPx / 2;
-      const centerY = rect.top + scaledY + heightPx / 2;
+      const centerX = canvasContentRect.left + (scaledX + widthPx / 2) * zoomLevel;
+      const centerY = canvasContentRect.top + (scaledY + heightPx / 2) * zoomLevel;
       
       // Calculate current mouse angle
       const mouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
@@ -192,13 +265,15 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     // Handle movement - Update state immediately for precise positioning
     if (!draggedFixture || !scaleInfo || !displayedImageSize || !canvasRef.current) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const canvasContentRect = canvasRef.current.querySelector('.canvas-content')?.getBoundingClientRect();
+    if (!canvasContentRect) return;
+
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth / zoomLevel;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight / zoomLevel;
     
-    // Get mouse position relative to canvas
-    const mouseX = e.clientX - rect.left - dragOffset.x;
-    const mouseY = e.clientY - rect.top - dragOffset.y;
+    // Get mouse position relative to canvas content (accounting for zoom)
+    const mouseX = (e.clientX - canvasContentRect.left) / zoomLevel - dragOffset.x;
+    const mouseY = (e.clientY - canvasContentRect.top) / zoomLevel - dragOffset.y;
     
     // Convert back to calibration image coordinates
     const calibrationX = mouseX / scaleX;
@@ -255,7 +330,39 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       onMouseLeave={handleMouseUp}
       onContextMenu={(e) => e.preventDefault()} // Prevent context menu on right-click
     >
-      <div className="canvas-content">
+      {/* Zoom Controls */}
+      <div className="zoom-controls">
+        <button
+          onClick={handleZoomIn}
+          className="zoom-button"
+          title="Zoom In (Ctrl/Cmd + Scroll)"
+        >
+          +
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="zoom-button"
+          title="Zoom Out (Ctrl/Cmd + Scroll)"
+        >
+          −
+        </button>
+        <button
+          onClick={handleZoomFit}
+          className="zoom-button"
+          title="Fit to Screen"
+        >
+          ⌂
+        </button>
+        <span className="zoom-level">{Math.round(zoomLevel * 100)}%</span>
+      </div>
+      
+      <div 
+        className="canvas-content"
+        style={{
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: 'top left',
+        }}
+      >
         <img 
           ref={imageRef}
           src={imageUrl} 
