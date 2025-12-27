@@ -1274,3 +1274,10 @@ body {
   background: #555;
 }
 
+.crop-loading-message {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+

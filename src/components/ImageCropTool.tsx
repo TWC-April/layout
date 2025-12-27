@@ -33,6 +33,31 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
     return () => window.removeEventListener('resize', handleImageLoad);
   }, [handleImageLoad]);
 
+  // Add global mouse up handler to ensure crop selection completes even if mouse leaves container
+  useEffect(() => {
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      if (isSelecting && cropStart && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const pos = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        };
+        // Clamp to container bounds
+        const clampedPos = {
+          x: Math.max(0, Math.min(rect.width, pos.x)),
+          y: Math.max(0, Math.min(rect.height, pos.y)),
+        };
+        setCropEnd(clampedPos);
+        setIsSelecting(false);
+      }
+    };
+
+    if (isSelecting) {
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    }
+  }, [isSelecting, cropStart]);
+
   const getMousePos = (e: React.MouseEvent) => {
     if (!containerRef.current) return { x: 0, y: 0 };
     const rect = containerRef.current.getBoundingClientRect();
@@ -44,6 +69,7 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only left click
+    e.preventDefault();
     const pos = getMousePos(e);
     setIsSelecting(true);
     setCropStart(pos);
@@ -52,16 +78,31 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isSelecting || !cropStart) return;
+    e.preventDefault();
     const pos = getMousePos(e);
     setCropEnd(pos);
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      // Set final crop end position on mouse up
+      const pos = getMousePos(e);
+      setCropEnd(pos);
+    }
     setIsSelecting(false);
   };
 
   const handleCrop = () => {
-    if (!cropStart || !cropEnd || !imageRef.current || !imageSize) return;
+    if (!cropStart || !cropEnd || !imageRef.current) {
+      alert('Please select a crop area first.');
+      return;
+    }
+
+    if (!imageSize) {
+      alert('Image is still loading. Please wait.');
+      return;
+    }
 
     // Calculate crop area
     const x1 = Math.min(cropStart.x, cropEnd.x);
@@ -86,7 +127,10 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
       // Create canvas for cropping
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        alert('Failed to create canvas context.');
+        return;
+      }
 
       // Set canvas size to crop dimensions
       canvas.width = cropWidth * scaleX;
@@ -109,10 +153,13 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
       const croppedDataUrl = canvas.toDataURL('image/png');
       onCropComplete(croppedDataUrl, canvas.width, canvas.height);
     };
+    img.onerror = () => {
+      alert('Failed to load image for cropping.');
+    };
     img.src = imageUrl;
   };
 
-  const cropArea = cropStart && cropEnd
+  const cropArea = cropStart && cropEnd && imageSize
     ? {
         left: Math.min(cropStart.x, cropEnd.x),
         top: Math.min(cropStart.y, cropEnd.y),
@@ -120,6 +167,9 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
         height: Math.abs(cropEnd.y - cropStart.y),
       }
     : null;
+
+  // Check if crop area is valid (has minimum size)
+  const isValidCropArea = cropArea && cropArea.width >= 10 && cropArea.height >= 10;
 
   return (
     <div className="crop-tool-container">
@@ -133,7 +183,12 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={(e) => {
+          // Only finalize if we were selecting
+          if (isSelecting && cropStart) {
+            handleMouseUp(e);
+          }
+        }}
       >
         <img
           ref={imageRef}
@@ -158,7 +213,7 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
         <button
           onClick={handleCrop}
           className="crop-button"
-          disabled={!cropArea || cropArea.width < 10 || cropArea.height < 10}
+          disabled={!isValidCropArea}
         >
           Apply Crop
         </button>
@@ -177,6 +232,11 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
           </button>
         )}
       </div>
+      {!imageSize && (
+        <div className="crop-loading-message">
+          Loading image...
+        </div>
+      )}
     </div>
   );
 };
