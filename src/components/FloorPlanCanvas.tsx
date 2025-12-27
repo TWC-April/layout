@@ -189,11 +189,15 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       if (!canvasContentRect) return;
       
       // Adjust mouse coordinates for zoom (CSS transform)
+      // Mouse coordinates are in screen pixels, need to convert to canvas content coordinates
       const mouseX = (e.clientX - canvasContentRect.left) / zoomLevel;
       const mouseY = (e.clientY - canvasContentRect.top) / zoomLevel;
       
-      const scaleX = displayedImageSize.width / scaleInfo.imageWidth / zoomLevel;
-      const scaleY = displayedImageSize.height / scaleInfo.imageHeight / zoomLevel;
+      // Calculate scale from calibration image to displayed image (before zoom)
+      // Zoom is handled separately via CSS transform, so we don't divide by zoomLevel here
+      // This ensures millimeter measurements remain constant regardless of zoom
+      const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+      const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
       const scaledX = fixture.position.x * scaleX;
       const scaledY = fixture.position.y * scaleY;
       
@@ -221,12 +225,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       const canvasContentRect = canvasRef.current.querySelector('.canvas-content')?.getBoundingClientRect();
       if (!canvasContentRect) return;
 
-      const scaleX = displayedImageSize.width / scaleInfo.imageWidth / zoomLevel;
-      const scaleY = displayedImageSize.height / scaleInfo.imageHeight / zoomLevel;
+      // Calculate scale from calibration image to displayed image (before zoom)
+      const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+      const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
       const scaledX = fixture.position.x * scaleX;
       const scaledY = fixture.position.y * scaleY;
       
-      // Get center of fixture (accounting for zoom)
+      // Get center of fixture (accounting for zoom in screen coordinates)
       const widthPx = fixture.width * scaleInfo.pixelsPerMillimeter * scaleX;
       const heightPx = fixture.height * scaleInfo.pixelsPerMillimeter * scaleY;
       const centerX = canvasContentRect.left + (scaledX + widthPx / 2) * zoomLevel;
@@ -268,10 +273,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     const canvasContentRect = canvasRef.current.querySelector('.canvas-content')?.getBoundingClientRect();
     if (!canvasContentRect) return;
 
-    const scaleX = displayedImageSize.width / scaleInfo.imageWidth / zoomLevel;
-    const scaleY = displayedImageSize.height / scaleInfo.imageHeight / zoomLevel;
+    // Calculate scale from calibration image to displayed image (before zoom)
+    // Zoom is handled separately via CSS transform, so we don't divide by zoomLevel here
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
     
     // Get mouse position relative to canvas content (accounting for zoom)
+    // Mouse coordinates are in screen pixels, convert to canvas content coordinates
     const mouseX = (e.clientX - canvasContentRect.left) / zoomLevel - dragOffset.x;
     const mouseY = (e.clientY - canvasContentRect.top) / zoomLevel - dragOffset.y;
     
@@ -442,13 +450,15 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
 
         {/* Render fixtures */}
         {scaleInfo && displayedImageSize && fixtures.map((fixture) => {
-          // Calculate scale factors from calibration image size to current displayed image size
+          // Calculate scale factors from calibration image size to current displayed image size (before zoom)
+          // This ensures millimeter measurements remain constant regardless of zoom
           const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
           const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
           
-          // pixelsPerMillimeter is in calibration image coordinates
-          // Convert fixture dimensions from mm to pixels in current displayed image
+          // pixelsPerMillimeter is stored in calibration image coordinates (scaleInfo.imageWidth/imageHeight)
+          // Convert fixture dimensions from mm to pixels in current displayed image (before CSS zoom transform)
           // Formula: mm * (px/mm in calibration) * (current displayed / calibration displayed)
+          // The CSS transform scale() will handle the visual zoom without affecting the actual millimeter scale
           const widthPx = fixture.width * scaleInfo.pixelsPerMillimeter * scaleX;
           const heightPx = fixture.height * scaleInfo.pixelsPerMillimeter * scaleY;
           
@@ -462,7 +472,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
             ? tempRotationAngle.current
             : (fixture.rotation || 0);
           
-          // Scale fixture positions from calibration image coordinates to current displayed image
+          // Scale fixture positions from calibration image coordinates to current displayed image (before zoom)
+          // The CSS transform will apply zoom visually
           const scaledX = displayPosition.x * scaleX;
           const scaledY = displayPosition.y * scaleY;
 
