@@ -43,7 +43,7 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
             onClick={() => setShowAddForm(true)}
             className="add-fixture-button"
           >
-            + Add Custom Fixture
+            + Miscellaneous
           </button>
         </div>
       </div>

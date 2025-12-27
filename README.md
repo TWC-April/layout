@@ -69,7 +69,7 @@ npm run preview
    - Add multiple reference lines for better accuracy (X/Y axis detection)
 3. **Import Fixtures** (optional):
    - Click "📎 Import PNG Files" to import multiple fixture images at once
-   - Or click "+ Add Custom Fixture" to add a single fixture with image
+   - Or click "+ Miscellaneous" to add a single fixture with image
    - Enter name, dimensions (mm), and upload an image
    - Custom fixtures are saved automatically and persist across reloads
 4. **Place Fixtures**: Drag fixtures from the library onto the floor plan

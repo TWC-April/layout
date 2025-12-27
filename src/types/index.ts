@@ -47,5 +47,6 @@ export interface FloorPlanState {
   dimensionLines: DimensionLine[];
   fixtures: PlacedFixture[];
   isDrawingDimension: boolean;
+  isCropping: boolean;
 }
 

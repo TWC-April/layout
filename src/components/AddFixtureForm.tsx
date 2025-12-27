@@ -78,7 +78,7 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
   return (
     <div className="add-fixture-form-overlay" onClick={onCancel}>
       <div className="add-fixture-form" onClick={(e) => e.stopPropagation()}>
-        <h3>{isEdit ? 'Edit Fixture' : 'Add Custom Fixture'}</h3>
+        <h3>{isEdit ? 'Edit Fixture' : 'Miscellaneous'}</h3>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>

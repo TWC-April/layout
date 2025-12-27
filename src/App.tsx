@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ImageUpload } from './components/ImageUpload';
+import { ImageCropTool } from './components/ImageCropTool';
 import { DimensionLineTool } from './components/DimensionLineTool';
 import { ScaleCalibration } from './components/ScaleCalibration';
 import { FloorPlanCanvas } from './components/FloorPlanCanvas';
@@ -20,6 +21,7 @@ function App() {
     dimensionLines: [],
     fixtures: [],
     isDrawingDimension: false,
+    isCropping: false,
   });
 
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -104,14 +106,39 @@ function App() {
   }, []);
 
   const handleImageUpload = (url: string, width: number, height: number) => {
-    setState({
+    const newState = {
       imageUrl: url,
       scaleInfo: null,
       dimensionLines: [],
       fixtures: [],
-      isDrawingDimension: true,
+      isDrawingDimension: false,
+      isCropping: true, // Show crop tool first
+    };
+    saveToHistory(newState);
+    setState(newState);
+    setImageDimensions({ width, height });
+  };
+
+  const handleCropComplete = (croppedUrl: string, width: number, height: number) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        imageUrl: croppedUrl,
+        isCropping: false,
+        isDrawingDimension: true, // Move to dimension line tool after cropping
+      };
+      saveToHistory(newState);
+      return newState;
     });
     setImageDimensions({ width, height });
+  };
+
+  const handleCancelCrop = () => {
+    setState((prev) => ({
+      ...prev,
+      isCropping: false,
+      isDrawingDimension: true, // Skip cropping, go to dimension lines
+    }));
   };
 
   const handleDimensionLineComplete = (line: DimensionLine) => {
@@ -370,7 +397,13 @@ function App() {
           <main className="main-content">
             {state.imageUrl ? (
               <>
-                {state.isDrawingDimension ? (
+                {state.isCropping ? (
+                  <ImageCropTool
+                    imageUrl={state.imageUrl}
+                    onCropComplete={handleCropComplete}
+                    onCancel={handleCancelCrop}
+                  />
+                ) : state.isDrawingDimension ? (
                   <div className="calibration-view">
                     <DimensionLineTool
                       imageUrl={state.imageUrl}
