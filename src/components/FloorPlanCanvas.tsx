@@ -394,14 +394,24 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
             }}
           >
             {dimensionLines.map((line) => {
-              // Scale positions from calibration image size to current displayed image size
-              const scaleX = displayedImageSize.width / line.imageWidth;
-              const scaleY = displayedImageSize.height / line.imageHeight;
+              // Scale positions from calibration image size (scaleInfo) to current displayed image size
+              // All dimension lines should use the same reference (scaleInfo.imageWidth/imageHeight)
+              // This ensures they stay in the same position regardless of zoom
+              const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+              const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
               
-              const scaledStartX = line.start.x * scaleX;
-              const scaledStartY = line.start.y * scaleY;
-              const scaledEndX = line.end.x * scaleX;
-              const scaledEndY = line.end.y * scaleY;
+              // Convert line positions from their original image coordinates to calibration coordinates
+              // First, normalize to calibration image coordinates
+              const normalizedStartX = (line.start.x / line.imageWidth) * scaleInfo.imageWidth;
+              const normalizedStartY = (line.start.y / line.imageHeight) * scaleInfo.imageHeight;
+              const normalizedEndX = (line.end.x / line.imageWidth) * scaleInfo.imageWidth;
+              const normalizedEndY = (line.end.y / line.imageHeight) * scaleInfo.imageHeight;
+              
+              // Then scale to current displayed size
+              const scaledStartX = normalizedStartX * scaleX;
+              const scaledStartY = normalizedStartY * scaleY;
+              const scaledEndX = normalizedEndX * scaleX;
+              const scaledEndY = normalizedEndY * scaleY;
               
               const midX = (scaledStartX + scaledEndX) / 2;
               const midY = (scaledStartY + scaledEndY) / 2;
