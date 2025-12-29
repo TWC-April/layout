@@ -527,46 +527,92 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               
               {/* Rotation handle - appears when fixture is selected */}
               {isSelected && (
-                <div
-                  className="rotation-handle"
-                  style={{
-                    position: 'absolute',
-                    top: -12,
-                    right: -12,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    backgroundColor: '#007AFF',
-                    border: '2px solid white',
-                    cursor: 'grab',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    zIndex: 10,
-                    pointerEvents: 'auto',
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    handleFixtureMouseDown(fixture, e, true);
-                  }}
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                <>
+                  <div
+                    className="rotation-handle"
+                    style={{
+                      position: 'absolute',
+                      top: -12,
+                      right: -12,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: '#007AFF',
+                      border: '2px solid white',
+                      cursor: 'grab',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      zIndex: 10,
+                      pointerEvents: 'auto',
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      handleFixtureMouseDown(fixture, e, true);
+                    }}
                   >
-                    <path
-                      d="M6 1 L8 3 L6 5 M8 3 L3 3 M6 11 L8 9 L6 7 M8 9 L3 9"
-                      stroke="white"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M6 1 L8 3 L6 5 M8 3 L3 3 M6 11 L8 9 L6 7 M8 9 L3 9"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  
+                  {/* Delete button - appears when fixture is selected */}
+                  <div
+                    className="delete-handle"
+                    style={{
+                      position: 'absolute',
+                      top: -12,
+                      left: -12,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: '#FF3B30',
+                      border: '2px solid white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      zIndex: 10,
+                      pointerEvents: 'auto',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onFixtureDelete(fixture.id);
+                    }}
+                    title="Delete fixture"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M3 3 L9 9 M9 3 L3 9"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </>
               )}
             </div>
           );

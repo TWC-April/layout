@@ -964,6 +964,19 @@ body {
   background-color: #0051D5;
 }
 
+.delete-handle {
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.delete-handle:hover {
+  background-color: #D70015;
+  transform: scale(1.1);
+}
+
+.delete-handle:active {
+  transform: scale(0.95);
+}
+
 .empty-state {
   display: flex;
   align-items: center;
