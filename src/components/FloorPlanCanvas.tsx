@@ -513,7 +513,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'contain',
+                    objectFit: 'fill', // Fill exact dimensions - no gaps
                     display: 'block',
                   }}
                 />
