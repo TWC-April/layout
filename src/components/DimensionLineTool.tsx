@@ -243,12 +243,24 @@ export const DimensionLineTool: React.FC<DimensionLineToolProps> = ({
                 }}
               >
                 {existingLines.map((line) => {
-                  const scaleX = imageSize.width / line.imageWidth;
-                  const scaleY = imageSize.height / line.imageHeight;
-                  const scaledStartX = line.start.x * scaleX;
-                  const scaledStartY = line.start.y * scaleY;
-                  const scaledEndX = line.end.x * scaleX;
-                  const scaledEndY = line.end.y * scaleY;
+                  // Normalize to calibration image size (scaleInfo) if available, otherwise use line's image size
+                  // This ensures consistency between calibration view and main canvas view
+                  const referenceWidth = scaleInfo?.imageWidth || line.imageWidth;
+                  const referenceHeight = scaleInfo?.imageHeight || line.imageHeight;
+                  
+                  // First normalize to reference coordinates
+                  const normalizedStartX = (line.start.x / line.imageWidth) * referenceWidth;
+                  const normalizedStartY = (line.start.y / line.imageHeight) * referenceHeight;
+                  const normalizedEndX = (line.end.x / line.imageWidth) * referenceWidth;
+                  const normalizedEndY = (line.end.y / line.imageHeight) * referenceHeight;
+                  
+                  // Then scale to current displayed image size
+                  const scaleX = imageSize.width / referenceWidth;
+                  const scaleY = imageSize.height / referenceHeight;
+                  const scaledStartX = normalizedStartX * scaleX;
+                  const scaledStartY = normalizedStartY * scaleY;
+                  const scaledEndX = normalizedEndX * scaleX;
+                  const scaledEndY = normalizedEndY * scaleY;
                   const midX = (scaledStartX + scaledEndX) / 2;
                   const midY = (scaledStartY + scaledEndY) / 2;
                   const angle = Math.atan2(
