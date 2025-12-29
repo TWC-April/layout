@@ -282,6 +282,28 @@ body {
   background: #e67e22;
 }
 
+.scale-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.crop-image-button {
+  width: 100%;
+  padding: 0.5rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.crop-image-button:hover {
+  background: #2980b9;
+}
+
 .fixture-library h2 {
   margin-bottom: 1rem;
   color: #333;

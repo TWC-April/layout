@@ -111,8 +111,8 @@ function App() {
       scaleInfo: null,
       dimensionLines: [],
       fixtures: [],
-      isDrawingDimension: false,
-      isCropping: true, // Show crop tool first
+      isDrawingDimension: true, // Go directly to dimension lines (skip cropping)
+      isCropping: false, // Don't show crop tool by default
     };
     saveToHistory(newState);
     setState(newState);
@@ -200,6 +200,14 @@ function App() {
       ...prev,
       isDrawingDimension: true,
       scaleInfo: null,
+    }));
+  };
+
+  const handleStartCrop = () => {
+    setState((prev) => ({
+      ...prev,
+      isCropping: true,
+      isDrawingDimension: false,
     }));
   };
 
@@ -359,16 +367,23 @@ function App() {
                     ))
                   )}
                 </div>
-                {state.dimensionLines.length > 0 && state.scaleInfo && (
-                  <div className="calibration-actions">
+                <div className="calibration-actions">
+                  {state.dimensionLines.length > 0 && state.scaleInfo ? (
                     <button
                       onClick={handleFinishCalibration}
                       className="finish-calibration-button"
                     >
                       Finish Calibration
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    <button
+                      onClick={handleStartCrop}
+                      className="crop-image-button"
+                    >
+                      Crop Image
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <>
@@ -377,9 +392,14 @@ function App() {
                     <div className="scale-info">
                       <h3>Scale</h3>
                       <p>{state.scaleInfo.pixelsPerMillimeter.toFixed(4)} px/mm</p>
-                      <button onClick={handleStartCalibration} className="recalibrate-button">
-                        Recalibrate
-                      </button>
+                      <div className="scale-actions">
+                        <button onClick={handleStartCalibration} className="recalibrate-button">
+                          Recalibrate
+                        </button>
+                        <button onClick={handleStartCrop} className="crop-image-button">
+                          Crop Image
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
