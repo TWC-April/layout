@@ -975,6 +975,286 @@ body {
   object-fit: fill; /* Fill exact dimensions - no gaps */
   display: block;
   padding: 0;
+  margin: 0; /* Ensure no margin */
+}
+
+/* Group Management Styles */
+.group-manager {
+  background: white;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+}
+
+.group-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.group-manager-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.create-group-button {
+  padding: 0.4rem 0.8rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.create-group-button:hover {
+  background: #2980b9;
+}
+
+.create-group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.group-name-input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.group-name-input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.group-form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.save-group-button,
+.cancel-group-button {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.save-group-button {
+  background: #27ae60;
+  color: white;
+}
+
+.save-group-button:hover {
+  background: #229954;
+}
+
+.cancel-group-button {
+  background: #95a5a6;
+  color: white;
+}
+
+.cancel-group-button:hover {
+  background: #7f8c8d;
+}
+
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.group-name {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+}
+
+.group-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.edit-group-button,
+.delete-group-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.edit-group-button:hover {
+  background: #e9ecef;
+}
+
+.delete-group-button:hover {
+  background: #fee;
+}
+
+.group-edit-form {
+  flex: 1;
+}
+
+.no-groups-message {
+  color: #666;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.5rem;
+  font-style: italic;
+}
+
+/* Fixture Group Display */
+.fixture-group {
+  margin-bottom: 1.5rem;
+}
+
+.fixture-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.group-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.group-count {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: normal;
+}
+
+/* Group Selection in Forms */
+.group-selection {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.group-select {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.group-select:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.new-group-button {
+  padding: 0.5rem 0.75rem;
+  background: #ecf0f1;
+  color: #555;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.new-group-button:hover {
+  background: #d5dbdb;
+}
+
+.new-group-input {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.group-name-input-small {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.group-name-input-small:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.create-group-button-small,
+.cancel-group-button-small {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.create-group-button-small {
+  background: #27ae60;
+  color: white;
+}
+
+.create-group-button-small:hover {
+  background: #229954;
+}
+
+.cancel-group-button-small {
+  background: #95a5a6;
+  color: white;
+}
+
+.cancel-group-button-small:hover {
+  background: #7f8c8d;
+}
+
+.bulk-group-selection {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.bulk-group-selection label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
   margin: 0;
 }
 

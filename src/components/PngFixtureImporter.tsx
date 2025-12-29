@@ -1,10 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { Fixture } from '../types';
+import { Group } from '../hooks/useGroups';
 
 interface PngFixtureImporterProps {
   onFixturesParsed: (fixtures: Omit<Fixture, 'id' | 'isCustom' | 'createdAt'>[]) => void;
   onCancel: () => void;
   onAddSingleFixture?: (fixture: Omit<Fixture, 'id' | 'isCustom' | 'createdAt'>) => void;
+  groups?: Group[];
+  onCreateGroup?: (name: string) => void;
 }
 
 type ParsedFixture = Omit<Fixture, 'id' | 'isCustom' | 'createdAt'>;
@@ -15,16 +18,22 @@ interface PendingFixture {
   name: string;
   width: string;
   height: string;
+  group?: string;
 }
 
 export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
   onFixturesParsed,
   onCancel,
   onAddSingleFixture,
+  groups = [],
+  onCreateGroup,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingFixtures, setPendingFixtures] = useState<PendingFixture[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
+  const [showNewGroupInput, setShowNewGroupInput] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +112,15 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
     setPendingFixtures((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleCreateGroup = () => {
+    if (newGroupName.trim() && onCreateGroup) {
+      onCreateGroup(newGroupName.trim());
+      setSelectedGroup(newGroupName.trim());
+      setNewGroupName('');
+      setShowNewGroupInput(false);
+    }
+  };
+
   const handleImport = () => {
     const validFixtures: ParsedFixture[] = [];
 
@@ -116,6 +134,7 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
           width: widthNum,
           height: heightNum,
           icon: pending.imageData,
+          group: pending.group || selectedGroup || undefined,
         });
       }
     }
@@ -123,6 +142,7 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
     if (validFixtures.length > 0) {
       onFixturesParsed(validFixtures);
       setPendingFixtures([]);
+      setSelectedGroup('');
     } else {
       setError('Please fill in name, width, and height for at least one fixture.');
     }
@@ -139,6 +159,7 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
         width: widthNum,
         height: heightNum,
         icon: pending.imageData,
+        group: pending.group || selectedGroup || undefined,
       });
       removePendingFixture(index);
     }
@@ -177,6 +198,74 @@ export const PngFixtureImporter: React.FC<PngFixtureImporterProps> = ({
         {pendingFixtures.length > 0 && (
           <div className="parser-preview">
             <h4>Configure {pendingFixtures.length} fixture(s):</h4>
+            
+            {/* Group selection for bulk import */}
+            <div className="bulk-group-selection">
+              <label>
+                Assign all fixtures to group (optional):
+                <div className="group-selection">
+                  <select
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    className="group-select"
+                  >
+                    <option value="">Ungrouped</option>
+                    {groups.map((group) => (
+                      <option key={group.id} value={group.name}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!showNewGroupInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewGroupInput(true)}
+                      className="new-group-button"
+                    >
+                      + New Group
+                    </button>
+                  ) : (
+                    <div className="new-group-input">
+                      <input
+                        type="text"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        placeholder="Group name"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleCreateGroup();
+                          } else if (e.key === 'Escape') {
+                            setShowNewGroupInput(false);
+                            setNewGroupName('');
+                          }
+                        }}
+                        autoFocus
+                        className="group-name-input-small"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateGroup}
+                        className="create-group-button-small"
+                      >
+                        Create
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewGroupInput(false);
+                          setNewGroupName('');
+                        }}
+                        className="cancel-group-button-small"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+
             <div className="fixtures-preview-list">
               {pendingFixtures.map((pending, index) => (
                 <div key={index} className="fixture-preview-item">

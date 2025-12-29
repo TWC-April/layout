@@ -1,11 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { Fixture } from '../types';
+import { Group } from '../hooks/useGroups';
 
 interface AddFixtureFormProps {
   onSave: (fixture: Omit<Fixture, 'id' | 'isCustom' | 'createdAt'>) => void;
   onCancel: () => void;
   initialFixture?: Fixture;
   isEdit?: boolean;
+  groups?: Group[];
+  onCreateGroup?: (name: string) => void;
 }
 
 export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
@@ -13,11 +16,16 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
   onCancel,
   initialFixture,
   isEdit = false,
+  groups = [],
+  onCreateGroup,
 }) => {
   const [name, setName] = useState(initialFixture?.name || '');
   const [width, setWidth] = useState(initialFixture?.width.toString() || '');
   const [height, setHeight] = useState(initialFixture?.height.toString() || '');
   const [imagePreview, setImagePreview] = useState<string | null>(initialFixture?.icon || null);
+  const [selectedGroup, setSelectedGroup] = useState<string>(initialFixture?.group || '');
+  const [showNewGroupInput, setShowNewGroupInput] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +58,15 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
     }
   };
 
+  const handleCreateGroup = () => {
+    if (newGroupName.trim() && onCreateGroup) {
+      onCreateGroup(newGroupName.trim());
+      setSelectedGroup(newGroupName.trim());
+      setNewGroupName('');
+      setShowNewGroupInput(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const widthNum = parseFloat(width);
@@ -61,6 +78,7 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
         width: widthNum,
         height: heightNum,
         icon: imagePreview || undefined,
+        group: selectedGroup || undefined,
       });
       // Reset form if not editing
       if (!isEdit) {
@@ -68,6 +86,7 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
         setWidth('');
         setHeight('');
         setImagePreview(null);
+        setSelectedGroup('');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -159,6 +178,72 @@ export const AddFixtureForm: React.FC<AddFixtureFormProps> = ({
                 />
               </label>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label>
+              Group (Optional):
+              <div className="group-selection">
+                <select
+                  value={selectedGroup}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                  className="group-select"
+                >
+                  <option value="">Ungrouped</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.name}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+                {!showNewGroupInput ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewGroupInput(true)}
+                    className="new-group-button"
+                  >
+                    + New Group
+                  </button>
+                ) : (
+                  <div className="new-group-input">
+                    <input
+                      type="text"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      placeholder="Group name"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCreateGroup();
+                        } else if (e.key === 'Escape') {
+                          setShowNewGroupInput(false);
+                          setNewGroupName('');
+                        }
+                      }}
+                      autoFocus
+                      className="group-name-input-small"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateGroup}
+                      className="create-group-button-small"
+                    >
+                      Create
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewGroupInput(false);
+                        setNewGroupName('');
+                      }}
+                      className="cancel-group-button-small"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </label>
           </div>
 
           <div className="form-actions">

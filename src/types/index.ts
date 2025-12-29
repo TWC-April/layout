@@ -17,6 +17,7 @@ export interface Fixture {
   icon?: string;
   isCustom?: boolean; // true for user-created fixtures
   createdAt?: number; // timestamp for custom fixtures
+  group?: string; // optional group name
 }
 
 export interface PlacedFixture extends Fixture {
