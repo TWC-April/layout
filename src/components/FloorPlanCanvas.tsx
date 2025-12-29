@@ -41,44 +41,35 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   const lastStateUpdateTime = useRef<number>(0);
   const isDeletingRef = useRef<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
-  const [baseImageSize, setBaseImageSize] = useState<{ width: number; height: number } | null>(null);
 
   const handleImageLoad = useCallback(() => {
     if (imageRef.current) {
-      const size = {
-        width: imageRef.current.naturalWidth,
-        height: imageRef.current.naturalHeight,
-      };
-      setBaseImageSize(size);
-      // Calculate displayed size based on container and zoom
-      updateDisplayedSize(size);
+      // Use offsetWidth/offsetHeight to match DimensionLineTool's approach
+      // This ensures both views use the same displayed image size calculation
+      updateDisplayedSize();
     }
   }, []);
 
-  const updateDisplayedSize = useCallback((baseSize: { width: number; height: number }) => {
-    if (!canvasRef.current || !imageRef.current) return;
-    
-    const container = canvasRef.current;
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    
-    // Calculate scale to fit image in container (base size, without zoom)
-    const scaleToFit = Math.min(
-      containerWidth / baseSize.width,
-      containerHeight / baseSize.height,
-      1.0 // Don't scale up beyond 100%
-    );
-    
-    // Displayed size is the base size scaled to fit (zoom is applied via CSS transform)
-    setDisplayedImageSize({
-      width: baseSize.width * scaleToFit,
-      height: baseSize.height * scaleToFit,
-    });
+  // Update displayed size when image loads or container resizes
+  const updateDisplayedSize = useCallback(() => {
+    if (imageRef.current) {
+      // Use offsetWidth/offsetHeight to match DimensionLineTool's approach
+      // This ensures both views use the same displayed image size calculation
+      // This is critical for dimension lines to stay in the same position when switching views
+      setDisplayedImageSize({
+        width: imageRef.current.offsetWidth,
+        height: imageRef.current.offsetHeight,
+      });
+    }
   }, []);
 
   React.useEffect(() => {
     handleImageLoad();
-    window.addEventListener('resize', handleImageLoad);
+    updateDisplayedSize();
+    window.addEventListener('resize', () => {
+      handleImageLoad();
+      updateDisplayedSize();
+    });
     return () => {
       window.removeEventListener('resize', handleImageLoad);
       // Cleanup: cancel any pending animation frame on unmount
@@ -86,14 +77,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [handleImageLoad]);
-
-  // Update displayed size when container resizes (but not when zoom changes - zoom is CSS transform)
-  React.useEffect(() => {
-    if (baseImageSize) {
-      updateDisplayedSize(baseImageSize);
-    }
-  }, [baseImageSize, updateDisplayedSize]);
+  }, [handleImageLoad, updateDisplayedSize]);
 
   // Handle mouse wheel zoom
   React.useEffect(() => {
@@ -394,24 +378,18 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
             }}
           >
             {dimensionLines.map((line) => {
-              // Scale positions from calibration image size (scaleInfo) to current displayed image size
-              // All dimension lines should use the same reference (scaleInfo.imageWidth/imageHeight)
-              // This ensures they stay in the same position regardless of zoom
-              const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-              const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+              // Scale positions directly from the line's original image coordinates to current displayed image size
+              // This ensures lines stay exactly where they were drawn, regardless of view changes
+              // The line's imageWidth/imageHeight are the displayed dimensions when it was drawn
+              // displayedImageSize is the current displayed dimensions (before zoom)
+              const scaleX = displayedImageSize.width / line.imageWidth;
+              const scaleY = displayedImageSize.height / line.imageHeight;
               
-              // Convert line positions from their original image coordinates to calibration coordinates
-              // First, normalize to calibration image coordinates
-              const normalizedStartX = (line.start.x / line.imageWidth) * scaleInfo.imageWidth;
-              const normalizedStartY = (line.start.y / line.imageHeight) * scaleInfo.imageHeight;
-              const normalizedEndX = (line.end.x / line.imageWidth) * scaleInfo.imageWidth;
-              const normalizedEndY = (line.end.y / line.imageHeight) * scaleInfo.imageHeight;
-              
-              // Then scale to current displayed size
-              const scaledStartX = normalizedStartX * scaleX;
-              const scaledStartY = normalizedStartY * scaleY;
-              const scaledEndX = normalizedEndX * scaleX;
-              const scaledEndY = normalizedEndY * scaleY;
+              // Direct scaling from original coordinates to current displayed size
+              const scaledStartX = line.start.x * scaleX;
+              const scaledStartY = line.start.y * scaleY;
+              const scaledEndX = line.end.x * scaleX;
+              const scaledEndY = line.end.y * scaleY;
               
               const midX = (scaledStartX + scaledEndX) / 2;
               const midY = (scaledStartY + scaledEndY) / 2;
