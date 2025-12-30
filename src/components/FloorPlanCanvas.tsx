@@ -19,7 +19,7 @@ interface FloorPlanCanvasProps {
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
   isAddingFixtureDimension?: boolean;
   isAddingCenterLine?: boolean;
-  onFixtureClick?: (fixtureId: string) => void;
+  onFloorPlanClick?: (position: Position) => void;
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
@@ -39,7 +39,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onDisplayedImageSizeChange,
   isAddingFixtureDimension = false,
   isAddingCenterLine = false,
-  onFixtureClick,
+  onFloorPlanClick,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -393,6 +393,22 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
           alt="Floor plan" 
           className="floor-plan-image"
           onLoad={handleImageLoad}
+          onClick={(e) => {
+            // Handle clicks on floor plan image for annotation tools
+            if ((isAddingFixtureDimension || isAddingCenterLine) && onFloorPlanClick && displayedImageSize && scaleInfo) {
+              e.stopPropagation();
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              // Account for zoom
+              const zoomX = x / zoomLevel;
+              const zoomY = y / zoomLevel;
+              onFloorPlanClick({ x: zoomX, y: zoomY });
+            }
+          }}
+          style={{
+            cursor: (isAddingFixtureDimension || isAddingCenterLine) ? 'crosshair' : 'default',
+          }}
         />
         
             {/* Render placement area overlay */}
@@ -543,7 +559,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 pointerEvents: 'auto', // Ensure fixtures are clickable
               }}
               onMouseDown={(e) => {
-                // If in annotation mode, prevent drag but allow click
+                // If in annotation mode, prevent fixture interaction
                 if (isAddingFixtureDimension || isAddingCenterLine) {
                   e.stopPropagation();
                   // Don't call handleFixtureMouseDown to prevent drag
@@ -551,14 +567,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 }
                 // Otherwise, handle normal fixture interaction
                 handleFixtureMouseDown(fixture, e, false);
-              }}
-              onClick={(e) => {
-                // Handle click for annotation mode
-                if ((isAddingFixtureDimension || isAddingCenterLine) && onFixtureClick) {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onFixtureClick(fixture.id);
-                }
               }}
               onMouseUp={(e) => {
                 // In annotation mode, prevent any drag completion

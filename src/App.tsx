@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ImageUpload } from './components/ImageUpload';
@@ -10,10 +10,10 @@ import { FixtureLibrary } from './components/FixtureLibrary';
 import { AreaSelectionTool } from './components/AreaSelectionTool';
 import { GroupSelector } from './components/GroupSelector';
 import { AutoPlacementPreview } from './components/AutoPlacementPreview';
-import { FixtureDimensionTool } from './components/FixtureDimensionTool';
+import { FixtureDimensionTool, FixtureDimensionToolHandle } from './components/FixtureDimensionTool';
 import { TextAnnotationTool } from './components/TextAnnotationTool';
-import { CenterLineTool } from './components/CenterLineTool';
-import { FloorPlanState, PlacedFixture, ScaleInfo, DimensionLine, Fixture, PlacementArea, FixtureDimensionLine, CenterLine, TextAnnotation } from './types';
+import { CenterLineTool, CenterLineToolHandle } from './components/CenterLineTool';
+import { FloorPlanState, PlacedFixture, ScaleInfo, DimensionLine, Fixture, PlacementArea, FixtureDimensionLine, CenterLine, TextAnnotation, Position } from './types';
 import { useCustomFixtures } from './hooks/useCustomFixtures';
 import { useGroups } from './hooks/useGroups';
 import { checkFit } from './utils/scaleUtils';
@@ -497,7 +497,6 @@ function App() {
       saveToHistory(newState);
       return newState;
     });
-    setSelectedFixtureForAnnotation(null);
   };
 
   const handleCenterLineComplete = (centerLine: CenterLine) => {
@@ -510,7 +509,6 @@ function App() {
       saveToHistory(newState);
       return newState;
     });
-    setSelectedFixtureForAnnotation(null);
   };
 
   const handleTextAnnotationComplete = (annotation: TextAnnotation) => {
@@ -532,15 +530,18 @@ function App() {
       isAddingCenterLine: false,
       isAddingTextAnnotation: false,
     }));
-    setSelectedFixtureForAnnotation(null);
   };
 
-  const [selectedFixtureForAnnotation, setSelectedFixtureForAnnotation] = useState<string | null>(null);
+  const dimensionToolRef = useRef<FixtureDimensionToolHandle>(null);
+  const centerLineToolRef = useRef<CenterLineToolHandle>(null);
 
-  const handleFixtureClickForAnnotation = (fixtureId: string) => {
-    console.log('App: Fixture clicked for annotation', fixtureId);
-    setSelectedFixtureForAnnotation(fixtureId);
-  };
+  const handleFloorPlanClick = useCallback((position: Position) => {
+    if (state.isAddingFixtureDimension && dimensionToolRef.current) {
+      dimensionToolRef.current.handleFloorPlanClick(position);
+    } else if (state.isAddingCenterLine && centerLineToolRef.current) {
+      centerLineToolRef.current.handleFloorPlanClick(position);
+    }
+  }, [state.isAddingFixtureDimension, state.isAddingCenterLine]);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -628,23 +629,21 @@ function App() {
                 </div>
                     {state.isAddingFixtureDimension && state.scaleInfo && displayedImageSize ? (
                       <FixtureDimensionTool
-                        fixtures={state.fixtures}
+                        ref={dimensionToolRef}
+                        imageUrl={state.imageUrl || ''}
                         scaleInfo={state.scaleInfo}
                         displayedImageSize={displayedImageSize}
                         onDimensionComplete={handleFixtureDimensionComplete}
                         onCancel={handleCancelAnnotation}
-                        selectedFixtureId={selectedFixtureForAnnotation}
-                        onFixtureSelect={setSelectedFixtureForAnnotation}
                       />
                     ) : state.isAddingCenterLine && state.scaleInfo && displayedImageSize ? (
                       <CenterLineTool
-                        fixtures={state.fixtures}
+                        ref={centerLineToolRef}
+                        imageUrl={state.imageUrl || ''}
                         scaleInfo={state.scaleInfo}
                         displayedImageSize={displayedImageSize}
                         onCenterLineComplete={handleCenterLineComplete}
                         onCancel={handleCancelAnnotation}
-                        selectedFixtureId={selectedFixtureForAnnotation}
-                        onFixtureSelect={setSelectedFixtureForAnnotation}
                       />
                     ) : (
                       <FixtureLibrary
@@ -738,7 +737,7 @@ function App() {
                     onDisplayedImageSizeChange={setDisplayedImageSize}
                     isAddingFixtureDimension={state.isAddingFixtureDimension}
                     isAddingCenterLine={state.isAddingCenterLine}
-                    onFixtureClick={handleFixtureClickForAnnotation}
+                    onFloorPlanClick={handleFloorPlanClick}
                   />
                 ) : (
                   <div className="empty-state">

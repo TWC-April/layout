@@ -1,93 +1,56 @@
-import React, { useState, useCallback } from 'react';
-import { PlacedFixture, ScaleInfo, FixtureDimensionLine, Position } from '../types';
+import { useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { ScaleInfo, FixtureDimensionLine, Position } from '../types';
 import { pixelsToRealUnits } from '../utils/scaleUtils';
 
 interface FixtureDimensionToolProps {
-  fixtures: PlacedFixture[];
+  imageUrl: string;
   scaleInfo: ScaleInfo;
   displayedImageSize: { width: number; height: number };
   onDimensionComplete: (dimension: FixtureDimensionLine) => void;
   onCancel: () => void;
-  selectedFixtureId?: string | null;
-  onFixtureSelect?: (fixtureId: string) => void;
 }
 
-export const FixtureDimensionTool: React.FC<FixtureDimensionToolProps> = ({
-  fixtures,
+export interface FixtureDimensionToolHandle {
+  handleFloorPlanClick: (position: Position) => void;
+}
+
+export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, FixtureDimensionToolProps>(({
   scaleInfo,
   displayedImageSize,
   onDimensionComplete,
   onCancel,
-  selectedFixtureId,
-  onFixtureSelect,
-}) => {
-  const [selectedFixtureId1, setSelectedFixtureId1] = useState<string | null>(null);
-  const [selectedFixtureId2, setSelectedFixtureId2] = useState<string | null>(null);
+}, ref) => {
+  const [startPos, setStartPos] = useState<Position | null>(null);
+  const [endPos, setEndPos] = useState<Position | null>(null);
   const [customLabel, setCustomLabel] = useState('');
 
-  // Handle fixture selection from canvas
-  React.useEffect(() => {
-    if (selectedFixtureId && onFixtureSelect) {
-      if (!selectedFixtureId1) {
-        setSelectedFixtureId1(selectedFixtureId);
-      } else if (!selectedFixtureId2 && selectedFixtureId !== selectedFixtureId1) {
-        setSelectedFixtureId2(selectedFixtureId);
-      }
-    }
-  }, [selectedFixtureId, selectedFixtureId1, onFixtureSelect]);
+  const handleFloorPlanClick = useCallback((position: Position) => {
+    // Convert from displayed pixels to calibration pixels
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const calibrationX = position.x / scaleX;
+    const calibrationY = position.y / scaleY;
 
-  const getFixtureCenter = useCallback((fixture: PlacedFixture): Position => {
-    // Fixture position is in calibration image pixels
-    // Calculate center accounting for rotation
-    const centerX = fixture.position.x + (fixture.width * scaleInfo.pixelsPerMillimeter) / 2;
-    const centerY = fixture.position.y + (fixture.height * scaleInfo.pixelsPerMillimeter) / 2;
-    
-    // If rotated, we need to rotate the center point
-    if (fixture.rotation) {
-      const angleRad = (fixture.rotation * Math.PI) / 180;
-      const dx = centerX - fixture.position.x;
-      const dy = centerY - fixture.position.y;
-      const rotatedX = fixture.position.x + dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
-      const rotatedY = fixture.position.y + dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
-      return { x: rotatedX, y: rotatedY };
-    }
-    
-    return { x: centerX, y: centerY };
-  }, [scaleInfo]);
+    const calibrationPos: Position = { x: calibrationX, y: calibrationY };
 
-  // Handle fixture selection from canvas
-  React.useEffect(() => {
-    if (selectedFixtureId && selectedFixtureId.trim() !== '') {
-      if (!selectedFixtureId1) {
-        setSelectedFixtureId1(selectedFixtureId);
-        // Clear selection after processing to allow next click
-        if (onFixtureSelect) {
-          setTimeout(() => onFixtureSelect(''), 100);
-        }
-      } else if (!selectedFixtureId2 && selectedFixtureId !== selectedFixtureId1) {
-        setSelectedFixtureId2(selectedFixtureId);
-        // Clear selection after processing
-        if (onFixtureSelect) {
-          setTimeout(() => onFixtureSelect(''), 100);
-        }
-      }
+    if (!startPos) {
+      setStartPos(calibrationPos);
+    } else if (!endPos) {
+      setEndPos(calibrationPos);
     }
-  }, [selectedFixtureId, selectedFixtureId1, onFixtureSelect]);
+  }, [startPos, endPos, scaleInfo, displayedImageSize]);
+
+  // Expose click handler via ref
+  useImperativeHandle(ref, () => ({
+    handleFloorPlanClick,
+  }), [handleFloorPlanClick]);
 
   const handleConfirm = useCallback(() => {
-    if (!selectedFixtureId1 || !selectedFixtureId2) return;
+    if (!startPos || !endPos) return;
 
-    const fixture1 = fixtures.find(f => f.id === selectedFixtureId1);
-    const fixture2 = fixtures.find(f => f.id === selectedFixtureId2);
-    
-    if (!fixture1 || !fixture2) return;
-
-    const center1 = getFixtureCenter(fixture1);
-    const center2 = getFixtureCenter(fixture2);
-
-    // Calculate distance in pixels
-    const dx = center2.x - center1.x;
-    const dy = center2.y - center1.y;
+    // Calculate distance in pixels (calibration coordinates)
+    const dx = endPos.x - startPos.x;
+    const dy = endPos.y - startPos.y;
     const pixelDistance = Math.sqrt(dx * dx + dy * dy);
 
     // Convert to millimeters
@@ -95,10 +58,8 @@ export const FixtureDimensionTool: React.FC<FixtureDimensionToolProps> = ({
 
     const dimension: FixtureDimensionLine = {
       id: `fixture-dim-${Date.now()}`,
-      fixtureId1: selectedFixtureId1,
-      fixtureId2: selectedFixtureId2,
-      startPosition: center1,
-      endPosition: center2,
+      startPosition: startPos,
+      endPosition: endPos,
       realLength,
       label: customLabel.trim() || undefined,
       imageWidth: displayedImageSize.width,
@@ -106,42 +67,43 @@ export const FixtureDimensionTool: React.FC<FixtureDimensionToolProps> = ({
     };
 
     onDimensionComplete(dimension);
-  }, [selectedFixtureId1, selectedFixtureId2, fixtures, getFixtureCenter, scaleInfo, customLabel, displayedImageSize, onDimensionComplete]);
+    // Reset
+    setStartPos(null);
+    setEndPos(null);
+    setCustomLabel('');
+  }, [startPos, endPos, scaleInfo, customLabel, displayedImageSize, onDimensionComplete]);
 
   const handleReset = useCallback(() => {
-    setSelectedFixtureId1(null);
-    setSelectedFixtureId2(null);
+    setStartPos(null);
+    setEndPos(null);
     setCustomLabel('');
   }, []);
+
+  // Calculate preview distance
+  const previewDistance = startPos && endPos ? (() => {
+    const dx = endPos.x - startPos.x;
+    const dy = endPos.y - startPos.y;
+    const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+    return pixelsToRealUnits(pixelDistance, scaleInfo);
+  })() : null;
 
   return (
     <div className="fixture-dimension-tool">
       <div className="tool-header">
-        <h3>Add Fixture Dimension</h3>
+        <h3>Add Dimension</h3>
         <p>
-          {!selectedFixtureId1 
-            ? 'Click on the first fixture'
-            : !selectedFixtureId2
-            ? 'Click on the second fixture'
+          {!startPos 
+            ? 'Click on the floor plan to set the first point'
+            : !endPos
+            ? 'Click on the floor plan to set the second point'
             : 'Dimension ready'}
         </p>
       </div>
 
-      {selectedFixtureId1 && selectedFixtureId2 && (
+      {startPos && endPos && previewDistance !== null && (
         <div className="dimension-preview">
           <p>
-            Distance: {(() => {
-              const fixture1 = fixtures.find(f => f.id === selectedFixtureId1);
-              const fixture2 = fixtures.find(f => f.id === selectedFixtureId2);
-              if (!fixture1 || !fixture2) return '0';
-              const center1 = getFixtureCenter(fixture1);
-              const center2 = getFixtureCenter(fixture2);
-              const dx = center2.x - center1.x;
-              const dy = center2.y - center1.y;
-              const pixelDistance = Math.sqrt(dx * dx + dy * dy);
-              const realLength = pixelsToRealUnits(pixelDistance, scaleInfo);
-              return `${Math.round(realLength).toLocaleString()} mm`;
-            })()}
+            Distance: {Math.round(previewDistance).toLocaleString()} mm
           </p>
           <input
             type="text"
@@ -157,14 +119,14 @@ export const FixtureDimensionTool: React.FC<FixtureDimensionToolProps> = ({
         <button
           onClick={handleConfirm}
           className="confirm-button"
-          disabled={!selectedFixtureId1 || !selectedFixtureId2}
+          disabled={!startPos || !endPos}
         >
           Add Dimension
         </button>
         <button
           onClick={handleReset}
           className="reset-button"
-          disabled={!selectedFixtureId1}
+          disabled={!startPos}
         >
           Reset Selection
         </button>
@@ -177,12 +139,18 @@ export const FixtureDimensionTool: React.FC<FixtureDimensionToolProps> = ({
       </div>
 
       <div className="tool-instructions">
-        <p>Click on two fixtures to measure the distance between them.</p>
-        <p className="highlight-text">
-          Selected: {selectedFixtureId1 ? fixtures.find(f => f.id === selectedFixtureId1)?.name : 'None'} → {selectedFixtureId2 ? fixtures.find(f => f.id === selectedFixtureId2)?.name : 'None'}
-        </p>
+        <p><strong>Instructions:</strong> Click two points on the floor plan to measure the distance between them.</p>
+        {startPos && (
+          <p className="highlight-text">
+            First point set ✓
+          </p>
+        )}
+        {endPos && (
+          <p className="highlight-text">
+            Second point set ✓
+          </p>
+        )}
       </div>
     </div>
   );
-};
-
+});

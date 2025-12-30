@@ -52,10 +52,8 @@ export interface PlacementArea {
 
 export interface FixtureDimensionLine {
   id: string;
-  fixtureId1: string; // First fixture
-  fixtureId2: string; // Second fixture
-  startPosition: Position; // Start point (center of fixture 1) in calibration pixels
-  endPosition: Position; // End point (center of fixture 2) in calibration pixels
+  startPosition: Position; // Start point on floor plan in calibration pixels
+  endPosition: Position; // End point on floor plan in calibration pixels
   realLength: number; // Calculated distance in mm
   label?: string; // Optional custom label
   imageWidth: number; // displayed image width in pixels when created
@@ -64,10 +62,8 @@ export interface FixtureDimensionLine {
 
 export interface CenterLine {
   id: string;
-  fixtureId1: string;
-  fixtureId2: string;
-  start: Position; // Center of fixture 1 in calibration pixels
-  end: Position; // Center of fixture 2 in calibration pixels
+  start: Position; // Start point on floor plan in calibration pixels
+  end: Position; // End point on floor plan in calibration pixels
   imageWidth: number; // displayed image width in pixels when created
   imageHeight: number; // displayed image height in pixels when created
 }

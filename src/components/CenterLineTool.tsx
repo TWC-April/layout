@@ -1,90 +1,68 @@
-import React, { useState, useCallback } from 'react';
-import { PlacedFixture, ScaleInfo, CenterLine } from '../types';
+import { useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { ScaleInfo, CenterLine, Position } from '../types';
 
 interface CenterLineToolProps {
-  fixtures: PlacedFixture[];
+  imageUrl: string;
   scaleInfo: ScaleInfo;
   displayedImageSize: { width: number; height: number };
   onCenterLineComplete: (centerLine: CenterLine) => void;
   onCancel: () => void;
-  selectedFixtureId?: string | null;
-  onFixtureSelect?: (fixtureId: string) => void;
 }
 
-export const CenterLineTool: React.FC<CenterLineToolProps> = ({
-  fixtures,
+export interface CenterLineToolHandle {
+  handleFloorPlanClick: (position: Position) => void;
+}
+
+export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolProps>(({
   scaleInfo,
   displayedImageSize,
   onCenterLineComplete,
   onCancel,
-  selectedFixtureId,
-  onFixtureSelect,
-}) => {
-  const [selectedFixtureId1, setSelectedFixtureId1] = useState<string | null>(null);
-  const [selectedFixtureId2, setSelectedFixtureId2] = useState<string | null>(null);
+}, ref) => {
+  const [startPos, setStartPos] = useState<Position | null>(null);
+  const [endPos, setEndPos] = useState<Position | null>(null);
 
-  // Handle fixture selection from canvas
-  React.useEffect(() => {
-    if (selectedFixtureId) {
-      if (!selectedFixtureId1) {
-        setSelectedFixtureId1(selectedFixtureId);
-        if (onFixtureSelect) {
-          setTimeout(() => onFixtureSelect(''), 100);
-        }
-      } else if (!selectedFixtureId2 && selectedFixtureId !== selectedFixtureId1) {
-        setSelectedFixtureId2(selectedFixtureId);
-        if (onFixtureSelect) {
-          setTimeout(() => onFixtureSelect(''), 100);
-        }
-      }
-    }
-  }, [selectedFixtureId, selectedFixtureId1, onFixtureSelect]);
+  const handleFloorPlanClick = useCallback((position: Position) => {
+    // Convert from displayed pixels to calibration pixels
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const calibrationX = position.x / scaleX;
+    const calibrationY = position.y / scaleY;
 
-  const getFixtureCenter = useCallback((fixture: PlacedFixture): { x: number; y: number } => {
-    // Fixture position is in calibration image pixels
-    const centerX = fixture.position.x + (fixture.width * scaleInfo.pixelsPerMillimeter) / 2;
-    const centerY = fixture.position.y + (fixture.height * scaleInfo.pixelsPerMillimeter) / 2;
-    
-    // If rotated, rotate the center point
-    if (fixture.rotation) {
-      const angleRad = (fixture.rotation * Math.PI) / 180;
-      const dx = centerX - fixture.position.x;
-      const dy = centerY - fixture.position.y;
-      const rotatedX = fixture.position.x + dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
-      const rotatedY = fixture.position.y + dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
-      return { x: rotatedX, y: rotatedY };
+    const calibrationPos: Position = { x: calibrationX, y: calibrationY };
+
+    if (!startPos) {
+      setStartPos(calibrationPos);
+    } else if (!endPos) {
+      setEndPos(calibrationPos);
     }
-    
-    return { x: centerX, y: centerY };
-  }, [scaleInfo]);
+  }, [startPos, endPos, scaleInfo, displayedImageSize]);
+
+  // Expose click handler via ref
+  useImperativeHandle(ref, () => ({
+    handleFloorPlanClick,
+  }), [handleFloorPlanClick]);
 
   const handleConfirm = useCallback(() => {
-    if (!selectedFixtureId1 || !selectedFixtureId2) return;
-
-    const fixture1 = fixtures.find(f => f.id === selectedFixtureId1);
-    const fixture2 = fixtures.find(f => f.id === selectedFixtureId2);
-    
-    if (!fixture1 || !fixture2) return;
-
-    const center1 = getFixtureCenter(fixture1);
-    const center2 = getFixtureCenter(fixture2);
+    if (!startPos || !endPos) return;
 
     const centerLine: CenterLine = {
       id: `center-line-${Date.now()}`,
-      fixtureId1: selectedFixtureId1,
-      fixtureId2: selectedFixtureId2,
-      start: center1,
-      end: center2,
+      start: startPos,
+      end: endPos,
       imageWidth: displayedImageSize.width,
       imageHeight: displayedImageSize.height,
     };
 
     onCenterLineComplete(centerLine);
-  }, [selectedFixtureId1, selectedFixtureId2, fixtures, getFixtureCenter, displayedImageSize, onCenterLineComplete]);
+    // Reset
+    setStartPos(null);
+    setEndPos(null);
+  }, [startPos, endPos, displayedImageSize, onCenterLineComplete]);
 
   const handleReset = useCallback(() => {
-    setSelectedFixtureId1(null);
-    setSelectedFixtureId2(null);
+    setStartPos(null);
+    setEndPos(null);
   }, []);
 
   return (
@@ -92,10 +70,10 @@ export const CenterLineTool: React.FC<CenterLineToolProps> = ({
       <div className="tool-header">
         <h3>Add Center Line</h3>
         <p>
-          {!selectedFixtureId1 
-            ? 'Click on the first fixture'
-            : !selectedFixtureId2
-            ? 'Click on the second fixture'
+          {!startPos 
+            ? 'Click on the floor plan to set the first point'
+            : !endPos
+            ? 'Click on the floor plan to set the second point'
             : 'Center line ready'}
         </p>
       </div>
@@ -104,14 +82,14 @@ export const CenterLineTool: React.FC<CenterLineToolProps> = ({
         <button
           onClick={handleConfirm}
           className="confirm-button"
-          disabled={!selectedFixtureId1 || !selectedFixtureId2}
+          disabled={!startPos || !endPos}
         >
           Add Center Line
         </button>
         <button
           onClick={handleReset}
           className="reset-button"
-          disabled={!selectedFixtureId1}
+          disabled={!startPos}
         >
           Reset Selection
         </button>
@@ -124,12 +102,18 @@ export const CenterLineTool: React.FC<CenterLineToolProps> = ({
       </div>
 
       <div className="tool-instructions">
-        <p>Click on two fixtures to draw a center line between them.</p>
-        <p className="highlight-text">
-          Selected: {selectedFixtureId1 ? fixtures.find(f => f.id === selectedFixtureId1)?.name : 'None'} → {selectedFixtureId2 ? fixtures.find(f => f.id === selectedFixtureId2)?.name : 'None'}
-        </p>
+        <p><strong>Instructions:</strong> Click two points on the floor plan to draw a center line between them.</p>
+        {startPos && (
+          <p className="highlight-text">
+            First point set ✓
+          </p>
+        )}
+        {endPos && (
+          <p className="highlight-text">
+            Second point set ✓
+          </p>
+        )}
       </div>
     </div>
   );
-};
-
+});
