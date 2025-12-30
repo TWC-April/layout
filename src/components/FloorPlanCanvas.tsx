@@ -14,7 +14,6 @@ interface FloorPlanCanvasProps {
   onFixtureRotateComplete?: () => void;
   placementArea?: PlacementArea | null;
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
-  onStartCrop?: () => void;
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
@@ -29,7 +28,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onFixtureRotateComplete,
   placementArea,
   onDisplayedImageSizeChange,
-  onStartCrop,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -372,15 +370,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
           alt="Floor plan" 
           className="floor-plan-image"
           onLoad={handleImageLoad}
-          onDoubleClick={(e) => {
-            // Only trigger crop if double-clicking directly on the image (not fixtures or other overlays)
-            if (e.target === imageRef.current && onStartCrop) {
-              e.stopPropagation();
-              onStartCrop();
-            }
-          }}
-          style={{ cursor: onStartCrop ? 'pointer' : 'default' }}
-          title={onStartCrop ? 'Double-click to crop image' : undefined}
         />
         
             {/* Render placement area overlay */}
