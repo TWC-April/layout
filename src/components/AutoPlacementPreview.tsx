@@ -2,6 +2,7 @@ import React from 'react';
 import { PlacedFixture, ScaleInfo, PlacementArea } from '../types';
 
 interface AutoPlacementPreviewProps {
+  imageUrl: string;
   area: PlacementArea;
   previewFixtures: PlacedFixture[];
   scaleInfo: ScaleInfo;
@@ -11,6 +12,7 @@ interface AutoPlacementPreviewProps {
 }
 
 export const AutoPlacementPreview: React.FC<AutoPlacementPreviewProps> = ({
+  imageUrl,
   area,
   previewFixtures,
   scaleInfo,

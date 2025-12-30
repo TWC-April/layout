@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { PlacedFixture, ScaleInfo, Position, DimensionLine, PlacementArea } from '../types';
 import { checkFit } from '../utils/scaleUtils';
 

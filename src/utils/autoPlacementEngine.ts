@@ -68,8 +68,6 @@ export function autoPlaceFixtures(
       { width: fixture.height, height: fixture.width, rotation: 90 },
     ];
     
-    let placed = false;
-    
     for (const orientation of orientations) {
       // Skip if fixture is too large for usable area
       if (orientation.width > usableArea.width || orientation.height > usableArea.height) {
@@ -103,7 +101,6 @@ export function autoPlaceFixtures(
           height: orientation.height,
         });
         
-        placed = true;
         break; // Move to next fixture
       }
     }
