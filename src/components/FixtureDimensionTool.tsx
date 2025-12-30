@@ -35,6 +35,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [dimensionInput, setDimensionInput] = useState('');
   const [isInputMode, setIsInputMode] = useState(false);
+  const [fixedDistance, setFixedDistance] = useState<number | null>(null); // Distance in pixels (calibration)
+  const [isAdjustingSecondPoint, setIsAdjustingSecondPoint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Handle Shift key for straight line constraint
@@ -92,10 +94,42 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       setEndPos(null);
       setIsInputMode(false);
       setDimensionInput('');
+      setFixedDistance(null);
+      setIsAdjustingSecondPoint(false);
+    } else if (endPos && fixedDistance !== null && isAdjustingSecondPoint) {
+      // User is adjusting the second point - update it
+      const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+      const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+      const startDisplayPos = { x: startPos.x * scaleX, y: startPos.y * scaleY };
+      
+      // Calculate angle from start to click position
+      const dx = position.x - startDisplayPos.x;
+      const dy = position.y - startDisplayPos.y;
+      const angle = Math.atan2(dy, dx);
+      
+      // Apply 90-degree constraint if Shift is pressed
+      let finalAngle = angle;
+      if (isShiftPressed) {
+        const degrees = (angle * 180) / Math.PI;
+        const roundedDegrees = Math.round(degrees / 90) * 90;
+        finalAngle = (roundedDegrees * Math.PI) / 180;
+      }
+      
+      // Calculate new end position at fixed distance
+      const newEndPos: Position = {
+        x: startPos.x + Math.cos(finalAngle) * fixedDistance,
+        y: startPos.y + Math.sin(finalAngle) * fixedDistance,
+      };
+      
+      const newEndDisplayPos = {
+        x: startDisplayPos.x + Math.cos(finalAngle) * fixedDistance * scaleX,
+        y: startDisplayPos.y + Math.sin(finalAngle) * fixedDistance * scaleY,
+      };
+      
+      setEndPos(newEndPos);
+      setCurrentPos(newEndDisplayPos);
     } else if (!endPos && !isInputMode) {
-      // Second click: Set end position OR enter input mode
-      // If user wants to input dimension, they can type it
-      // For now, we'll set end position on second click
+      // Second click: Set end position (normal click mode)
       const constrainedPos = constrainToStraightLine(startPos, calibrationPos);
       const constrainedDisplayPos = constrainToStraightLine(
         { x: startPos.x * scaleX, y: startPos.y * scaleY },
@@ -103,68 +137,99 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       );
       setEndPos(constrainedPos);
       setCurrentPos(constrainedDisplayPos);
+      setFixedDistance(null); // No fixed distance in click mode
+      setIsAdjustingSecondPoint(false);
     }
-  }, [startPos, endPos, isInputMode, scaleInfo, displayedImageSize, constrainToStraightLine]);
+  }, [startPos, endPos, isInputMode, fixedDistance, isAdjustingSecondPoint, isShiftPressed, scaleInfo, displayedImageSize, constrainToStraightLine]);
 
   const handleFloorPlanMouseMove = useCallback((position: Position) => {
-    if (!startPos || endPos) return;
-    
     // Don't update preview if user is typing in the input field
     if (inputRef.current && document.activeElement === inputRef.current) {
       return;
     }
     
-    // Convert from displayed pixels to calibration pixels
-    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    if (!startPos) return;
     
-    // Constrain to straight line if Shift is pressed
-    const constrainedDisplayPos = constrainToStraightLine(
-      { x: startPos.x * scaleX, y: startPos.y * scaleY },
-      position
-    );
-    
-    setCurrentPos(constrainedDisplayPos);
-  }, [startPos, endPos, scaleInfo, displayedImageSize, constrainToStraightLine]);
-
-  // Handle dimension input mode - calculate second point from dimension
-  const handleDimensionInput = useCallback((dimension: number) => {
-    if (!startPos) return; // Need startPos
-    if (endPos) return; // Already have endPos, don't recalculate
-    
-    // Calculate direction from start to current position
     const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
     const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
     const startDisplayPos = { x: startPos.x * scaleX, y: startPos.y * scaleY };
     
-    if (!currentPos) {
-      // Default to horizontal if no current position
-      const pixelDistance = realUnitsToPixels(dimension, scaleInfo);
-      const endCalibrationPos: Position = {
-        x: startPos.x + pixelDistance,
-        y: startPos.y,
-      };
-      setEndPos(endCalibrationPos);
-      setCurrentPos({ x: startDisplayPos.x + pixelDistance * scaleX, y: startDisplayPos.y });
-    } else {
-      // Calculate direction from start to current
-      const dx = currentPos.x - startDisplayPos.x;
-      const dy = currentPos.y - startDisplayPos.y;
+    if (endPos && fixedDistance !== null && isAdjustingSecondPoint) {
+      // User is adjusting the second point - move it around the first point at fixed distance
+      const dx = position.x - startDisplayPos.x;
+      const dy = position.y - startDisplayPos.y;
       const angle = Math.atan2(dy, dx);
       
-      const pixelDistance = realUnitsToPixels(dimension, scaleInfo);
-      const endCalibrationPos: Position = {
-        x: startPos.x + Math.cos(angle) * pixelDistance,
-        y: startPos.y + Math.sin(angle) * pixelDistance,
+      // Apply 90-degree constraint if Shift is pressed
+      let finalAngle = angle;
+      if (isShiftPressed) {
+        const degrees = (angle * 180) / Math.PI;
+        const roundedDegrees = Math.round(degrees / 90) * 90;
+        finalAngle = (roundedDegrees * Math.PI) / 180;
+      }
+      
+      // Calculate new end position at fixed distance
+      const newEndPos: Position = {
+        x: startPos.x + Math.cos(finalAngle) * fixedDistance,
+        y: startPos.y + Math.sin(finalAngle) * fixedDistance,
       };
-      setEndPos(endCalibrationPos);
-      setCurrentPos({
-        x: startDisplayPos.x + Math.cos(angle) * pixelDistance * scaleX,
-        y: startDisplayPos.y + Math.sin(angle) * pixelDistance * scaleY,
-      });
+      
+      const newEndDisplayPos = {
+        x: startDisplayPos.x + Math.cos(finalAngle) * fixedDistance * scaleX,
+        y: startDisplayPos.y + Math.sin(finalAngle) * fixedDistance * scaleY,
+      };
+      
+      setEndPos(newEndPos);
+      setCurrentPos(newEndDisplayPos);
+    } else if (!endPos) {
+      // Normal preview mode before second point is set
+      // Constrain to straight line if Shift is pressed
+      const constrainedDisplayPos = constrainToStraightLine(
+        startDisplayPos,
+        position
+      );
+      setCurrentPos(constrainedDisplayPos);
     }
+  }, [startPos, endPos, fixedDistance, isAdjustingSecondPoint, isShiftPressed, scaleInfo, displayedImageSize, constrainToStraightLine]);
+
+  // Handle dimension input mode - calculate second point from dimension
+  const handleDimensionInput = useCallback((dimension: number) => {
+    if (!startPos) return; // Need startPos
+    if (endPos && fixedDistance !== null) return; // Already have endPos from dimension input, don't recalculate
+    
+    // Calculate pixel distance for the fixed dimension
+    const pixelDistance = realUnitsToPixels(dimension, scaleInfo);
+    setFixedDistance(pixelDistance);
+    
+    // Calculate direction from start to current position (or default to horizontal)
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const startDisplayPos = { x: startPos.x * scaleX, y: startPos.y * scaleY };
+    
+    let angle = 0; // Default to horizontal (0 degrees)
+    if (currentPos) {
+      // Use current mouse direction if available
+      const dx = currentPos.x - startDisplayPos.x;
+      const dy = currentPos.y - startDisplayPos.y;
+      angle = Math.atan2(dy, dx);
+    }
+    
+    // Calculate initial end position
+    const endCalibrationPos: Position = {
+      x: startPos.x + Math.cos(angle) * pixelDistance,
+      y: startPos.y + Math.sin(angle) * pixelDistance,
+    };
+    
+    const endDisplayPos = {
+      x: startDisplayPos.x + Math.cos(angle) * pixelDistance * scaleX,
+      y: startDisplayPos.y + Math.sin(angle) * pixelDistance * scaleY,
+    };
+    
+    setEndPos(endCalibrationPos);
+    setCurrentPos(endDisplayPos);
     setIsInputMode(false);
-  }, [startPos, endPos, currentPos, scaleInfo, displayedImageSize]);
+    setIsAdjustingSecondPoint(true); // Enable adjustment mode
+  }, [startPos, endPos, currentPos, fixedDistance, scaleInfo, displayedImageSize]);
 
   // Expose handlers via ref
   useImperativeHandle(ref, () => ({
@@ -217,6 +282,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
     setCustomLabel('');
     setDimensionInput('');
     setIsInputMode(false);
+    setFixedDistance(null);
+    setIsAdjustingSecondPoint(false);
   }, [startPos, endPos, scaleInfo, customLabel, displayedImageSize, onDimensionComplete]);
 
   const handleReset = useCallback(() => {
@@ -226,6 +293,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
     setCustomLabel('');
     setDimensionInput('');
     setIsInputMode(false);
+    setFixedDistance(null);
+    setIsAdjustingSecondPoint(false);
   }, []);
 
   // Calculate preview distance
@@ -250,6 +319,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
             ? 'Click on the floor plan to set the first point'
             : !endPos
             ? `Click again to set the end point${isShiftPressed ? ' • Hold Shift for straight line' : ''}`
+            : fixedDistance !== null && isAdjustingSecondPoint
+            ? `Adjust second point position${isShiftPressed ? ' • Shift for 90° increments' : ''}`
             : 'Dimension ready'}
         </p>
       </div>
@@ -279,16 +350,36 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
                   handleDimensionInput(dim);
                 }
               }}
+              onKeyDown={(e) => {
+                // Allow Enter key to confirm dimension input
+                if (e.key === 'Enter' && dimensionInput) {
+                  const dim = parseFloat(dimensionInput);
+                  if (!isNaN(dim) && dim > 0) {
+                    handleDimensionInput(dim);
+                    e.preventDefault();
+                  }
+                }
+              }}
               onFocus={() => {
                 // Stop mouse move updates when input is focused
               }}
               onBlur={() => {
                 // Resume mouse move updates when input loses focus
               }}
-              placeholder="e.g., 5000"
+              placeholder="e.g., 1000"
               className="dimension-label-input"
             />
           </label>
+        </div>
+      )}
+      
+      {startPos && endPos && fixedDistance !== null && isAdjustingSecondPoint && (
+        <div className="dimension-adjustment-hint">
+          <p>
+            Move mouse to adjust second point position (360° rotation)
+            {isShiftPressed && <span className="shift-hint"> • Shift for 90° increments</span>}
+          </p>
+          <p className="hint-text">Click to lock position, or click "Add Dimension" to confirm</p>
         </div>
       )}
 

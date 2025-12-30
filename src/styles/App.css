@@ -2464,6 +2464,47 @@ body {
   font-weight: 600;
 }
 
+.dimension-input-section {
+  margin-bottom: 16px;
+}
+
+.dimension-input-section label {
+  display: block;
+  font-size: 14px;
+  color: var(--apple-text-secondary);
+  margin-bottom: 8px;
+}
+
+.dimension-adjustment-hint {
+  background: var(--apple-gray-light);
+  padding: 12px;
+  border-radius: var(--apple-border-radius-small);
+  margin-bottom: 16px;
+  border-left: 3px solid var(--apple-blue);
+}
+
+.dimension-adjustment-hint p {
+  margin: 0 0 8px 0;
+  color: var(--apple-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dimension-adjustment-hint p:last-child {
+  margin-bottom: 0;
+}
+
+.dimension-adjustment-hint .hint-text {
+  color: var(--apple-text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.dimension-adjustment-hint .shift-hint {
+  color: var(--apple-blue);
+  font-weight: 600;
+}
+
 .dimension-label-input {
   width: 100%;
   padding: 8px 12px;
