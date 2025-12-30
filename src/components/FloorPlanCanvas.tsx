@@ -1,5 +1,5 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { PlacedFixture, ScaleInfo, Position, DimensionLine } from '../types';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { PlacedFixture, ScaleInfo, Position, DimensionLine, PlacementArea } from '../types';
 import { checkFit } from '../utils/scaleUtils';
 
 interface FloorPlanCanvasProps {
@@ -12,6 +12,8 @@ interface FloorPlanCanvasProps {
   onFixtureDelete: (id: string) => void;
   onFixtureMoveComplete?: () => void;
   onFixtureRotateComplete?: () => void;
+  placementArea?: PlacementArea | null;
+  onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
@@ -24,6 +26,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onFixtureDelete,
   onFixtureMoveComplete,
   onFixtureRotateComplete,
+  placementArea,
+  onDisplayedImageSizeChange,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -56,12 +60,16 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       // Use offsetWidth/offsetHeight to match DimensionLineTool's approach
       // This ensures both views use the same displayed image size calculation
       // This is critical for dimension lines to stay in the same position when switching views
-      setDisplayedImageSize({
+      const size = {
         width: imageRef.current.offsetWidth,
         height: imageRef.current.offsetHeight,
-      });
+      };
+      setDisplayedImageSize(size);
+      if (onDisplayedImageSizeChange) {
+        onDisplayedImageSizeChange(size);
+      }
     }
-  }, []);
+  }, [onDisplayedImageSizeChange]);
 
   React.useEffect(() => {
     handleImageLoad();
@@ -364,19 +372,37 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
           onLoad={handleImageLoad}
         />
         
-        {/* Render dimension lines */}
-        {dimensionLines.length > 0 && displayedImageSize && scaleInfo && (
-          <svg
-            className="dimension-lines-overlay"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: displayedImageSize.width,
-              height: displayedImageSize.height,
-              pointerEvents: 'none',
-            }}
-          >
+            {/* Render placement area overlay */}
+            {placementArea && displayedImageSize && scaleInfo && (
+              <div
+                className="placement-area-overlay"
+                style={{
+                  position: 'absolute',
+                  left: (placementArea.x * scaleInfo.pixelsPerMillimeter) * (displayedImageSize.width / scaleInfo.imageWidth),
+                  top: (placementArea.y * scaleInfo.pixelsPerMillimeter) * (displayedImageSize.height / scaleInfo.imageHeight),
+                  width: (placementArea.width * scaleInfo.pixelsPerMillimeter) * (displayedImageSize.width / scaleInfo.imageWidth),
+                  height: (placementArea.height * scaleInfo.pixelsPerMillimeter) * (displayedImageSize.height / scaleInfo.imageHeight),
+                  border: '2px dashed var(--apple-blue)',
+                  backgroundColor: 'rgba(0, 122, 255, 0.05)',
+                  pointerEvents: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            )}
+
+            {/* Render dimension lines */}
+            {dimensionLines.length > 0 && displayedImageSize && scaleInfo && (
+              <svg
+                className="dimension-lines-overlay"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: displayedImageSize.width,
+                  height: displayedImageSize.height,
+                  pointerEvents: 'none',
+                }}
+              >
             {dimensionLines.map((line) => {
               // Scale positions directly from the line's original image coordinates to current displayed image size
               // This ensures lines stay exactly where they were drawn, regardless of view changes

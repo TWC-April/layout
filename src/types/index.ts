@@ -42,6 +42,14 @@ export interface ScaleInfo {
   unit: 'millimeters' | 'meters' | 'feet' | 'inches';
 }
 
+export interface PlacementArea {
+  id: string;
+  x: number; // in millimeters (calibration image coordinates)
+  y: number;
+  width: number; // in millimeters
+  height: number; // in millimeters
+}
+
 export interface FloorPlanState {
   imageUrl: string | null;
   scaleInfo: ScaleInfo | null;
@@ -49,5 +57,7 @@ export interface FloorPlanState {
   fixtures: PlacedFixture[];
   isDrawingDimension: boolean;
   isCropping: boolean;
+  placementArea: PlacementArea | null; // Currently selected area for auto-placement
+  isSelectingArea: boolean; // Whether user is in area selection mode
 }
 

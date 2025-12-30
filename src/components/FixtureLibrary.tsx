@@ -16,6 +16,8 @@ interface FixtureLibraryProps {
   onUpdateFixture: (id: string, updates: Partial<Fixture>) => void;
   onDeleteFixture: (id: string) => void;
   onFixtureClick: (fixture: Fixture) => void;
+  onStartAreaSelection?: () => void;
+  isSelectingArea?: boolean;
 }
 
 export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
@@ -25,6 +27,8 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
   onUpdateFixture,
   onDeleteFixture,
   onFixtureClick,
+  onStartAreaSelection,
+  isSelectingArea,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPngImporter, setShowPngImporter] = useState(false);
@@ -69,6 +73,16 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
               Miscellaneous
             </button>
           </div>
+          {onStartAreaSelection && (
+            <button
+              onClick={onStartAreaSelection}
+              className="select-area-button"
+              disabled={isSelectingArea}
+              title="Select area for auto-placement"
+            >
+              {isSelectingArea ? 'Selecting Area...' : 'Select Area'}
+            </button>
+          )}
         </div>
 
         <GroupManager

@@ -7,13 +7,19 @@ import { DimensionLineTool } from './components/DimensionLineTool';
 import { ScaleCalibration } from './components/ScaleCalibration';
 import { FloorPlanCanvas } from './components/FloorPlanCanvas';
 import { FixtureLibrary } from './components/FixtureLibrary';
-import { FloorPlanState, PlacedFixture, ScaleInfo, DimensionLine, Fixture } from './types';
+import { AreaSelectionTool } from './components/AreaSelectionTool';
+import { GroupSelector } from './components/GroupSelector';
+import { AutoPlacementPreview } from './components/AutoPlacementPreview';
+import { FloorPlanState, PlacedFixture, ScaleInfo, DimensionLine, Fixture, PlacementArea } from './types';
 import { useCustomFixtures } from './hooks/useCustomFixtures';
+import { useGroups } from './hooks/useGroups';
 import { checkFit } from './utils/scaleUtils';
+import { autoPlaceFixtures } from './utils/autoPlacementEngine';
 import './styles/App.css';
 
 function App() {
   const { customFixtures, addFixture, bulkAddFixtures, updateFixture, deleteFixture } = useCustomFixtures();
+  const { groups } = useGroups();
   
   const [state, setState] = useState<FloorPlanState>({
     imageUrl: null,
@@ -22,9 +28,14 @@ function App() {
     fixtures: [],
     isDrawingDimension: false,
     isCropping: false,
+    placementArea: null,
+    isSelectingArea: false,
   });
 
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
+  const [previewFixtures, setPreviewFixtures] = useState<PlacedFixture[]>([]);
+  const [displayedImageSize, setDisplayedImageSize] = useState<{ width: number; height: number } | null>(null);
   
   // Undo/Redo history
   const historyRef = useRef<FloorPlanState[]>([]);
@@ -113,6 +124,8 @@ function App() {
       fixtures: [],
       isDrawingDimension: true, // Go directly to dimension lines (skip cropping)
       isCropping: false, // Don't show crop tool by default
+      placementArea: null,
+      isSelectingArea: false,
     };
     saveToHistory(newState);
     setState(newState);
@@ -319,6 +332,113 @@ function App() {
     }
   };
 
+  // Area selection handlers
+  const handleStartAreaSelection = () => {
+    setState((prev) => ({
+      ...prev,
+      isSelectingArea: true,
+      placementArea: null,
+    }));
+    setSelectedGroups(new Set());
+    setPreviewFixtures([]);
+  };
+
+  const handleAreaComplete = (area: { x: number; y: number; width: number; height: number }) => {
+    const placementArea: PlacementArea = {
+      id: `area-${Date.now()}`,
+      ...area,
+    };
+    
+    setState((prev) => ({
+      ...prev,
+      placementArea,
+      isSelectingArea: false,
+    }));
+    
+    // Generate preview if groups are already selected
+    if (selectedGroups.size > 0) {
+      generatePreview(placementArea, selectedGroups);
+    }
+  };
+
+  const handleCancelAreaSelection = () => {
+    setState((prev) => ({
+      ...prev,
+      isSelectingArea: false,
+      placementArea: null,
+    }));
+    setSelectedGroups(new Set());
+    setPreviewFixtures([]);
+  };
+
+  // Group selection handlers
+  const handleToggleGroup = (groupName: string) => {
+    setSelectedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      
+      // Auto-generate preview when groups change
+      if (state.placementArea && state.scaleInfo) {
+        generatePreview(state.placementArea, newSet);
+      }
+      
+      return newSet;
+    });
+  };
+
+  // Generate preview fixtures
+  const generatePreview = (area: PlacementArea, groupsToUse: Set<string>) => {
+    if (!state.scaleInfo) return;
+    
+    // Filter fixtures by selected groups
+    const fixturesToPlace = customFixtures.filter((fixture) => {
+      if (groupsToUse.has('Ungrouped')) {
+        return !fixture.group || groupsToUse.has(fixture.group);
+      }
+      return fixture.group && groupsToUse.has(fixture.group);
+    });
+    
+    if (fixturesToPlace.length === 0) {
+      setPreviewFixtures([]);
+      return;
+    }
+    
+    // Run auto-placement algorithm
+    const placed = autoPlaceFixtures(area, fixturesToPlace, state.fixtures);
+    setPreviewFixtures(placed);
+  };
+
+  // Confirm auto-placement
+  const handleConfirmPlacement = () => {
+    if (previewFixtures.length === 0) return;
+    
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        fixtures: [...prev.fixtures, ...previewFixtures],
+        placementArea: null,
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+    
+    setPreviewFixtures([]);
+    setSelectedGroups(new Set());
+  };
+
+  const handleCancelPlacement = () => {
+    setPreviewFixtures([]);
+    setSelectedGroups(new Set());
+    setState((prev) => ({
+      ...prev,
+      placementArea: null,
+    }));
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
@@ -410,7 +530,20 @@ function App() {
                   onUpdateFixture={updateFixture}
                   onDeleteFixture={deleteFixture}
                   onFixtureClick={handleFixtureClick}
+                  onStartAreaSelection={handleStartAreaSelection}
+                  isSelectingArea={state.isSelectingArea}
                 />
+                
+                {state.placementArea && !state.isSelectingArea && (
+                  <div className="auto-placement-sidebar">
+                    <GroupSelector
+                      groups={groups}
+                      fixtures={customFixtures}
+                      selectedGroups={selectedGroups}
+                      onToggleGroup={handleToggleGroup}
+                    />
+                  </div>
+                )}
               </>
             )}
           </aside>
@@ -433,6 +566,24 @@ function App() {
                       onCancel={handleCancelCalibration}
                     />
                   </div>
+                ) : state.isSelectingArea && state.scaleInfo ? (
+                  <AreaSelectionTool
+                    imageUrl={state.imageUrl}
+                    scaleInfo={state.scaleInfo}
+                    displayedImageSize={displayedImageSize}
+                    onAreaComplete={handleAreaComplete}
+                    onCancel={handleCancelAreaSelection}
+                  />
+                ) : state.placementArea && previewFixtures.length > 0 && state.scaleInfo && displayedImageSize ? (
+                  <AutoPlacementPreview
+                    imageUrl={state.imageUrl}
+                    area={state.placementArea}
+                    previewFixtures={previewFixtures}
+                    scaleInfo={state.scaleInfo}
+                    displayedImageSize={displayedImageSize}
+                    onConfirm={handleConfirmPlacement}
+                    onCancel={handleCancelPlacement}
+                  />
                 ) : state.scaleInfo ? (
                   <FloorPlanCanvas
                     imageUrl={state.imageUrl}
@@ -444,6 +595,8 @@ function App() {
                     onFixtureDelete={handleFixtureDelete}
                     onFixtureMoveComplete={handleFixtureMoveComplete}
                     onFixtureRotateComplete={handleFixtureRotateComplete}
+                    placementArea={state.placementArea}
+                    onDisplayedImageSizeChange={setDisplayedImageSize}
                   />
                 ) : (
                   <div className="empty-state">
