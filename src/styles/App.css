@@ -635,6 +635,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--apple-text-secondary);
+}
+
+.edit-button svg,
+.delete-button svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .edit-button:hover {
@@ -1337,6 +1345,17 @@ body {
   padding: 6px 8px;
   border-radius: var(--apple-border-radius-small);
   transition: all 0.2s ease;
+  color: var(--apple-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-group-button svg,
+.delete-group-button svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .edit-group-button:hover {

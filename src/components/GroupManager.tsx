@@ -120,7 +120,9 @@ export const GroupManager: React.FC<GroupManagerProps> = ({
                       className="edit-group-button"
                       title="Rename Group"
                     >
-                      ✏️
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10.5 1.5L12.5 3.5L4.5 11.5H2.5V9.5L10.5 1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </button>
                     <button
                       onClick={() => {
