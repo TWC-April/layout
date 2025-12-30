@@ -798,18 +798,35 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   const pixelDistance = Math.sqrt(dx * dx + dy * dy);
                   const realLength = pixelDistance / scaleInfo.pixelsPerMillimeter;
                   
+                  const textContent = `${Math.round(realLength).toLocaleString()} mm`;
+                  const textWidth = textContent.length * 7; // Approximate width
+                  
                   return (
-                    <text
-                      x={midX}
-                      y={midY - 10}
-                      fill="#007AFF"
-                      fontSize="12"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                      transform={`rotate(${angle} ${midX} ${midY})`}
-                    >
-                      {Math.round(realLength).toLocaleString()} mm
-                    </text>
+                    <>
+                      {/* White background for preview text */}
+                      <rect
+                        x={midX - textWidth / 2 - 4}
+                        y={midY - 18}
+                        width={textWidth + 8}
+                        height={16}
+                        fill="white"
+                        fillOpacity="0.8"
+                        rx="4"
+                        transform={`rotate(${angle} ${midX} ${midY})`}
+                      />
+                      <text
+                        x={midX}
+                        y={midY - 10}
+                        fill="#007AFF"
+                        fontSize="12"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        transform={`rotate(${angle} ${midX} ${midY})`}
+                      >
+                        {textContent}
+                      </text>
+                    </>
                   );
                 })()}
               </>
@@ -910,49 +927,103 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                       y2={scaledEndY + 6}
                     />
                   </g>
-                  <text
-                    x={labelX}
-                    y={labelY}
-                    fill="#007AFF"
-                    fontSize="12"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    transform={dim.labelPosition ? undefined : `rotate(${angle} ${labelX} ${labelY})`}
-                    style={{
-                      pointerEvents: 'auto',
-                      cursor: 'move',
-                    }}
-                    onMouseDown={(e) => {
-                      if (onDimensionLabelMove) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        const startX = e.clientX;
-                        const startY = e.clientY;
-                        const startLabelX = labelX;
-                        const startLabelY = labelY;
-                        
-                        const handleMouseMove = (moveEvent: MouseEvent) => {
-                          const deltaX = (moveEvent.clientX - startX) / scaleX;
-                          const deltaY = (moveEvent.clientY - startY) / scaleY;
-                          const newPos: Position = {
-                            x: (startLabelX / scaleX) + deltaX,
-                            y: (startLabelY / scaleY) + deltaY,
-                          };
-                          onDimensionLabelMove(dim.id, newPos);
-                        };
-                        
-                        const handleMouseUp = () => {
-                          document.removeEventListener('mousemove', handleMouseMove);
-                          document.removeEventListener('mouseup', handleMouseUp);
-                        };
-                        
-                        document.addEventListener('mousemove', handleMouseMove);
-                        document.addEventListener('mouseup', handleMouseUp);
-                      }
-                    }}
-                  >
-                    {dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`}
-                  </text>
+                  {/* White background for text */}
+                  {(() => {
+                    const textContent = dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`;
+                    const textWidth = textContent.length * 7; // Approximate width based on font size
+                    const padding = 4;
+                    
+                    return (
+                      <>
+                        <rect
+                          x={labelX - textWidth / 2 - padding}
+                          y={labelY - 8}
+                          width={textWidth + padding * 2}
+                          height={16}
+                          fill="white"
+                          fillOpacity="0.8"
+                          rx="4"
+                          transform={dim.labelPosition ? undefined : `rotate(${angle} ${labelX} ${labelY})`}
+                          style={{
+                            pointerEvents: 'auto',
+                            cursor: 'move',
+                          }}
+                          onMouseDown={(e) => {
+                            if (onDimensionLabelMove) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              const startX = e.clientX;
+                              const startY = e.clientY;
+                              const startLabelX = labelX;
+                              const startLabelY = labelY;
+                              
+                              const handleMouseMove = (moveEvent: MouseEvent) => {
+                                const deltaX = (moveEvent.clientX - startX) / scaleX;
+                                const deltaY = (moveEvent.clientY - startY) / scaleY;
+                                const newPos: Position = {
+                                  x: (startLabelX / scaleX) + deltaX,
+                                  y: (startLabelY / scaleY) + deltaY,
+                                };
+                                onDimensionLabelMove(dim.id, newPos);
+                              };
+                              
+                              const handleMouseUp = () => {
+                                document.removeEventListener('mousemove', handleMouseMove);
+                                document.removeEventListener('mouseup', handleMouseUp);
+                              };
+                              
+                              document.addEventListener('mousemove', handleMouseMove);
+                              document.addEventListener('mouseup', handleMouseUp);
+                            }
+                          }}
+                        />
+                        <text
+                          x={labelX}
+                          y={labelY}
+                          fill="#007AFF"
+                          fontSize="12"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          transform={dim.labelPosition ? undefined : `rotate(${angle} ${labelX} ${labelY})`}
+                          style={{
+                            pointerEvents: 'auto',
+                            cursor: 'move',
+                          }}
+                          onMouseDown={(e) => {
+                            if (onDimensionLabelMove) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              const startX = e.clientX;
+                              const startY = e.clientY;
+                              const startLabelX = labelX;
+                              const startLabelY = labelY;
+                              
+                              const handleMouseMove = (moveEvent: MouseEvent) => {
+                                const deltaX = (moveEvent.clientX - startX) / scaleX;
+                                const deltaY = (moveEvent.clientY - startY) / scaleY;
+                                const newPos: Position = {
+                                  x: (startLabelX / scaleX) + deltaX,
+                                  y: (startLabelY / scaleY) + deltaY,
+                                };
+                                onDimensionLabelMove(dim.id, newPos);
+                              };
+                              
+                              const handleMouseUp = () => {
+                                document.removeEventListener('mousemove', handleMouseMove);
+                                document.removeEventListener('mouseup', handleMouseUp);
+                              };
+                              
+                              document.addEventListener('mousemove', handleMouseMove);
+                              document.addEventListener('mouseup', handleMouseUp);
+                            }
+                          }}
+                        >
+                          {textContent}
+                        </text>
+                      </>
+                    );
+                  })()}
                   {/* Delete button - only appears on hover */}
                   {onDimensionLineDelete && (
                     <g
