@@ -79,6 +79,11 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
   }, [isShiftPressed]);
 
   const handleFloorPlanClick = useCallback((position: Position) => {
+    // Don't process clicks if user is typing in the input field
+    if (inputRef.current && document.activeElement === inputRef.current) {
+      return;
+    }
+    
     // Convert from displayed pixels to calibration pixels
     const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
     const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
@@ -103,7 +108,7 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
         }
       }, 50);
     } else if (endPos && fixedDistance !== null && isAdjustingSecondPoint) {
-      // User is adjusting the second point - update it
+      // User is clicking to lock the second point position
       const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
       const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
       const startDisplayPos = { x: startPos.x * scaleX, y: startPos.y * scaleY };
@@ -121,7 +126,7 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
         finalAngle = (roundedDegrees * Math.PI) / 180;
       }
       
-      // Calculate new end position at fixed distance
+      // Calculate final end position at fixed distance
       const newEndPos: Position = {
         x: startPos.x + Math.cos(finalAngle) * fixedDistance,
         y: startPos.y + Math.sin(finalAngle) * fixedDistance,
@@ -132,8 +137,13 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
         y: startDisplayPos.y + Math.sin(finalAngle) * fixedDistance * scaleY,
       };
       
+      // Lock the position and exit adjustment mode
       setEndPos(newEndPos);
       setCurrentPos(newEndDisplayPos);
+      setIsAdjustingSecondPoint(false); // Exit adjustment mode - position is now locked
+    } else if (endPos && fixedDistance !== null && !isAdjustingSecondPoint) {
+      // If position is locked, clicking again re-enters adjustment mode
+      setIsAdjustingSecondPoint(true);
     } else if (!endPos && !isInputMode) {
       // Second click: Set end position (normal click mode)
       const constrainedPos = constrainToStraightLine(startPos, calibrationPos);
@@ -393,7 +403,13 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
             Move mouse to adjust second point position (360° rotation)
             {isShiftPressed && <span className="shift-hint"> • Shift for 90° increments</span>}
           </p>
-          <p className="hint-text">Click to lock position, or click "Add Dimension" to confirm</p>
+          <p className="hint-text">Click on the floor plan to lock position, or click "Add Dimension" to confirm</p>
+        </div>
+      )}
+      
+      {startPos && endPos && fixedDistance !== null && !isAdjustingSecondPoint && (
+        <div className="dimension-preview">
+          <p className="hint-text">Second point locked. Click "Add Dimension" to confirm, or click on floor plan to adjust again.</p>
         </div>
       )}
 
