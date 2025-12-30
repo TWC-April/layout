@@ -422,6 +422,13 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.fixture-library-header h3 {
+  white-space: nowrap;
+  margin-bottom: 0;
 }
 
 .header-buttons {
