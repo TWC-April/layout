@@ -588,6 +588,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 transformOrigin: 'center center',
                 willChange: draggedFixture?.id === fixture.id ? 'transform' : 'auto', // Optimize for dragging
                 pointerEvents: 'auto', // Ensure fixtures are clickable
+                zIndex: 100, // Lower z-index so dimension lines can overlap
               }}
               onMouseDown={(e) => {
                 // If in annotation mode, prevent fixture interaction
@@ -845,6 +846,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               width: displayedImageSize.width,
               height: displayedImageSize.height,
               pointerEvents: 'none',
+              zIndex: 1000,
             }}
           >
             {fixtureDimensionLines.map((dim) => {
@@ -1077,6 +1079,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               width: displayedImageSize.width,
               height: displayedImageSize.height,
               pointerEvents: 'none',
+              zIndex: 1000,
             }}
           >
             {centerLines.map((line) => {
