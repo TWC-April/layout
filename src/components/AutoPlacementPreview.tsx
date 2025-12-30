@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PlacedFixture, ScaleInfo, PlacementArea } from '../types';
 
 interface AutoPlacementPreviewProps {
@@ -6,7 +6,7 @@ interface AutoPlacementPreviewProps {
   area: PlacementArea;
   previewFixtures: PlacedFixture[];
   scaleInfo: ScaleInfo;
-  displayedImageSize: { width: number; height: number };
+  displayedImageSize: { width: number; height: number } | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -16,13 +16,47 @@ export const AutoPlacementPreview: React.FC<AutoPlacementPreviewProps> = ({
   area,
   previewFixtures,
   scaleInfo,
-  displayedImageSize,
+  displayedImageSize: propDisplayedImageSize,
   onConfirm,
   onCancel,
 }) => {
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [displayedImageSize, setDisplayedImageSize] = useState<{ width: number; height: number } | null>(propDisplayedImageSize);
+
+  // Update displayed image size when image loads
+  const handleImageLoad = useCallback(() => {
+    if (imageRef.current) {
+      const size = {
+        width: imageRef.current.offsetWidth,
+        height: imageRef.current.offsetHeight,
+      };
+      setDisplayedImageSize(size);
+    }
+  }, []);
+
+  useEffect(() => {
+    handleImageLoad();
+    window.addEventListener('resize', handleImageLoad);
+    return () => window.removeEventListener('resize', handleImageLoad);
+  }, [handleImageLoad]);
+
+  // Use prop if available, otherwise use local state
+  const currentDisplayedImageSize = propDisplayedImageSize || displayedImageSize;
+
+  if (!currentDisplayedImageSize) {
+    return (
+      <div className="auto-placement-preview">
+        <div className="preview-header">
+          <h3>Auto-Placement Preview</h3>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Convert area from mm to displayed pixels
-  const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-  const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+  const scaleX = currentDisplayedImageSize.width / scaleInfo.imageWidth;
+  const scaleY = currentDisplayedImageSize.height / scaleInfo.imageHeight;
   
   const areaPx = {
     x: (area.x * scaleInfo.pixelsPerMillimeter) * scaleX,
@@ -40,9 +74,11 @@ export const AutoPlacementPreview: React.FC<AutoPlacementPreviewProps> = ({
       
       <div className="preview-area-overlay" style={{ position: 'relative' }}>
         <img
+          ref={imageRef}
           src={imageUrl}
           alt="Floor plan"
           style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
+          onLoad={handleImageLoad}
         />
         <div
           className="preview-area-box"

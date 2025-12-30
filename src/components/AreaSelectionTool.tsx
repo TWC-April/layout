@@ -13,7 +13,7 @@ interface AreaSelectionToolProps {
 export const AreaSelectionTool: React.FC<AreaSelectionToolProps> = ({
   imageUrl,
   scaleInfo,
-  displayedImageSize,
+  displayedImageSize: propDisplayedImageSize,
   onAreaComplete,
   onCancel,
 }) => {
@@ -22,9 +22,30 @@ export const AreaSelectionTool: React.FC<AreaSelectionToolProps> = ({
   const [isSelecting, setIsSelecting] = useState(false);
   const [areaStart, setAreaStart] = useState<Position | null>(null);
   const [areaEnd, setAreaEnd] = useState<Position | null>(null);
+  const [displayedImageSize, setDisplayedImageSize] = useState<{ width: number; height: number } | null>(propDisplayedImageSize);
+
+  // Update displayed image size when image loads
+  const handleImageLoad = useCallback(() => {
+    if (imageRef.current) {
+      const size = {
+        width: imageRef.current.offsetWidth,
+        height: imageRef.current.offsetHeight,
+      };
+      setDisplayedImageSize(size);
+    }
+  }, []);
+
+  useEffect(() => {
+    handleImageLoad();
+    window.addEventListener('resize', handleImageLoad);
+    return () => window.removeEventListener('resize', handleImageLoad);
+  }, [handleImageLoad]);
+
+  // Use prop if available, otherwise use local state
+  const currentDisplayedImageSize = propDisplayedImageSize || displayedImageSize;
 
   const getMousePos = useCallback((e: React.MouseEvent | MouseEvent): Position => {
-    if (!imageRef.current || !scaleInfo || !displayedImageSize) return { x: 0, y: 0 };
+    if (!imageRef.current || !scaleInfo || !currentDisplayedImageSize) return { x: 0, y: 0 };
     
     const imageRect = imageRef.current.getBoundingClientRect();
     const clientX = e.clientX;
@@ -39,8 +60,8 @@ export const AreaSelectionTool: React.FC<AreaSelectionToolProps> = ({
     y = Math.max(0, Math.min(imageRect.height, y));
     
     // Convert from displayed image pixels to calibration image pixels
-    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const scaleX = currentDisplayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = currentDisplayedImageSize.height / scaleInfo.imageHeight;
     const calibrationX = x / scaleX;
     const calibrationY = y / scaleY;
     
@@ -49,7 +70,7 @@ export const AreaSelectionTool: React.FC<AreaSelectionToolProps> = ({
     const mmY = pixelsToRealUnits(calibrationY, scaleInfo);
     
     return { x: mmX, y: mmY };
-  }, [scaleInfo, displayedImageSize]);
+  }, [scaleInfo, currentDisplayedImageSize]);
 
   // Global mouse up handler
   useEffect(() => {
@@ -122,10 +143,10 @@ export const AreaSelectionTool: React.FC<AreaSelectionToolProps> = ({
 
   // Convert mm to displayed pixels for rendering
   const getDisplayedArea = () => {
-    if (!areaStart || !areaEnd || !scaleInfo || !displayedImageSize) return null;
+    if (!areaStart || !areaEnd || !scaleInfo || !currentDisplayedImageSize) return null;
     
-    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const scaleX = currentDisplayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = currentDisplayedImageSize.height / scaleInfo.imageHeight;
     
     const x1 = Math.min(areaStart.x, areaEnd.x);
     const y1 = Math.min(areaStart.y, areaEnd.y);
@@ -174,6 +195,7 @@ export const AreaSelectionTool: React.FC<AreaSelectionToolProps> = ({
           alt="Floor plan"
           className="area-selection-image"
           style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
+          onLoad={handleImageLoad}
         />
         
         {displayedArea && (

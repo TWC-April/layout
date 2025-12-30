@@ -574,7 +574,7 @@ function App() {
                     onAreaComplete={handleAreaComplete}
                     onCancel={handleCancelAreaSelection}
                   />
-                ) : state.placementArea && previewFixtures.length > 0 && state.scaleInfo && displayedImageSize ? (
+                ) : state.placementArea && previewFixtures.length > 0 && state.scaleInfo ? (
                   <AutoPlacementPreview
                     imageUrl={state.imageUrl}
                     area={state.placementArea}
