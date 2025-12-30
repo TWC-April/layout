@@ -156,7 +156,7 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
 
   return (
     <div className="fixture-manager">
-      <h3>Custom Fixtures</h3>
+      <h3>Program</h3>
       
       {/* Render grouped fixtures */}
       {Object.entries(groupedFixtures.grouped).map(([groupName, fixtures]) => {
