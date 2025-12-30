@@ -408,7 +408,10 @@ function App() {
     }
     
     // Run auto-placement algorithm
-    const placed = autoPlaceFixtures(area, fixturesToPlace, state.fixtures);
+    const placed = autoPlaceFixtures(area, fixturesToPlace, state.fixtures, {
+      scaleInfo: state.scaleInfo,
+      clearance: 0, // Clearance is already included in fixture dimensions
+    });
     setPreviewFixtures(placed);
   };
 
