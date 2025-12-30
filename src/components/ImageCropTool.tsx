@@ -17,6 +17,7 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
   const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null);
   const [cropEnd, setCropEnd] = useState<{ x: number; y: number } | null>(null);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const hasUserInteractedRef = useRef<boolean>(false);
 
   const handleImageLoad = useCallback(() => {
     if (imageRef.current) {
@@ -38,22 +39,38 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
     setCropStart(null);
     setCropEnd(null);
     setIsSelecting(false);
+    hasUserInteractedRef.current = false; // Reset interaction flag
   }, [imageUrl]);
 
   // Add global mouse up handler to ensure crop selection completes even if mouse leaves container
   useEffect(() => {
+    if (!isSelecting || !cropStart || !imageRef.current || !hasUserInteractedRef.current) return;
+
     const handleGlobalMouseUp = (e: MouseEvent) => {
-      if (isSelecting && cropStart && imageRef.current) {
+      // Only handle if user has interacted and we're actively selecting
+      if (!imageRef.current || !hasUserInteractedRef.current) return;
+      
+      // Check if the mouse is actually over the image or container
+      const imageRect = imageRef.current.getBoundingClientRect();
+      const isOverImage = 
+        e.clientX >= imageRect.left &&
+        e.clientX <= imageRect.right &&
+        e.clientY >= imageRect.top &&
+        e.clientY <= imageRect.bottom;
+      
+      // Only process if mouse is over the image area
+      if (isOverImage) {
         const pos = getMousePos(e);
         setCropEnd(pos);
+        setIsSelecting(false);
+      } else {
+        // Mouse left the image area, cancel selection
         setIsSelecting(false);
       }
     };
 
-    if (isSelecting) {
-      window.addEventListener('mouseup', handleGlobalMouseUp);
-      return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
-    }
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [isSelecting, cropStart]);
 
   const getMousePos = (e: React.MouseEvent | MouseEvent) => {
@@ -77,11 +94,22 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only left click
+    // Only process if clicking directly on the image element itself
+    if (e.target !== imageRef.current) return;
+    
+    e.stopPropagation();
     e.preventDefault();
+    
+    // Mark that user has started interacting
+    hasUserInteractedRef.current = true;
+    
     const pos = getMousePos(e);
-    setIsSelecting(true);
-    setCropStart(pos);
-    setCropEnd(pos);
+    // Only start if we got a valid position (within image bounds)
+    if (pos.x >= 0 && pos.y >= 0 && imageRef.current) {
+      setIsSelecting(true);
+      setCropStart(pos);
+      setCropEnd(pos);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -204,8 +232,8 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={(e) => {
-          // Only finalize if we were selecting
-          if (isSelecting && cropStart) {
+          // Only finalize if we were selecting and user has interacted
+          if (isSelecting && cropStart && hasUserInteractedRef.current) {
             handleMouseUp(e);
           }
         }}
