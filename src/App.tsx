@@ -600,6 +600,7 @@ function App() {
                     onFixtureRotateComplete={handleFixtureRotateComplete}
                     placementArea={state.placementArea}
                     onDisplayedImageSizeChange={setDisplayedImageSize}
+                    onStartCrop={handleStartCrop}
                   />
                 ) : (
                   <div className="empty-state">
