@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Fixture } from '../types';
 import { AddFixtureForm } from './AddFixtureForm';
 import { Group } from '../hooks/useGroups';
@@ -22,6 +22,7 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const editingFixture = customFixtures.find((f) => f.id === editingId);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const handleUpdate = (fixture: Omit<Fixture, 'id' | 'isCustom' | 'createdAt'>) => {
     if (editingId) {
@@ -48,6 +49,40 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
 
     return { grouped, ungrouped };
   }, [customFixtures]);
+
+  // Initialize expanded groups when groups change (expand all by default)
+  useEffect(() => {
+    const groupNames = Object.keys(groupedFixtures.grouped);
+    if (groupNames.length > 0) {
+      setExpandedGroups((prev) => {
+        const newSet = new Set(prev);
+        groupNames.forEach((name) => {
+          if (!newSet.has(name)) {
+            newSet.add(name);
+          }
+        });
+        // Also ensure "Ungrouped" is expanded if it exists
+        if (groupedFixtures.ungrouped.length > 0) {
+          newSet.add('Ungrouped');
+        }
+        return newSet;
+      });
+    }
+  }, [groupedFixtures]);
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
+
+  const isGroupExpanded = (groupName: string) => expandedGroups.has(groupName);
 
   if (customFixtures.length === 0) {
     return null;
@@ -124,30 +159,72 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
       <h3>Custom Fixtures</h3>
       
       {/* Render grouped fixtures */}
-      {Object.entries(groupedFixtures.grouped).map(([groupName, fixtures]) => (
-        <div key={groupName} className="fixture-group">
-          <div className="fixture-group-header">
-            <h4 className="group-title">{groupName}</h4>
-            <span className="group-count">({fixtures.length})</span>
+      {Object.entries(groupedFixtures.grouped).map(([groupName, fixtures]) => {
+        const isExpanded = isGroupExpanded(groupName);
+        return (
+          <div key={groupName} className="fixture-group">
+            <div 
+              className="fixture-group-header"
+              onClick={() => toggleGroup(groupName)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="group-header-left">
+                <svg 
+                  className={`group-chevron ${isExpanded ? 'expanded' : ''}`}
+                  width="12" 
+                  height="12" 
+                  viewBox="0 0 12 12" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <h4 className="group-title">{groupName}</h4>
+              </div>
+              <span className="group-count">({fixtures.length})</span>
+            </div>
+            {isExpanded && (
+              <div className="custom-fixtures-list">
+                {fixtures.map(renderFixture)}
+              </div>
+            )}
           </div>
-          <div className="custom-fixtures-list">
-            {fixtures.map(renderFixture)}
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Render ungrouped fixtures */}
-      {groupedFixtures.ungrouped.length > 0 && (
-        <div className="fixture-group">
-          <div className="fixture-group-header">
-            <h4 className="group-title">Ungrouped</h4>
-            <span className="group-count">({groupedFixtures.ungrouped.length})</span>
+      {groupedFixtures.ungrouped.length > 0 && (() => {
+        const isExpanded = isGroupExpanded('Ungrouped');
+        return (
+          <div className="fixture-group">
+            <div 
+              className="fixture-group-header"
+              onClick={() => toggleGroup('Ungrouped')}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="group-header-left">
+                <svg 
+                  className={`group-chevron ${isExpanded ? 'expanded' : ''}`}
+                  width="12" 
+                  height="12" 
+                  viewBox="0 0 12 12" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <h4 className="group-title">Ungrouped</h4>
+              </div>
+              <span className="group-count">({groupedFixtures.ungrouped.length})</span>
+            </div>
+            {isExpanded && (
+              <div className="custom-fixtures-list">
+                {groupedFixtures.ungrouped.map(renderFixture)}
+              </div>
+            )}
           </div>
-          <div className="custom-fixtures-list">
-            {groupedFixtures.ungrouped.map(renderFixture)}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {editingId && editingFixture && (
         <AddFixtureForm

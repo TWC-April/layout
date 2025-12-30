@@ -526,6 +526,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
 }
 
 .custom-fixture-item {
@@ -1387,10 +1400,36 @@ body {
 .fixture-group-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 16px;
+  padding: 8px 12px;
   padding-bottom: 12px;
   border-bottom: 0.5px solid var(--apple-gray-medium);
+  transition: all 0.2s ease;
+  border-radius: var(--apple-border-radius-small);
+  user-select: none;
+}
+
+.fixture-group-header:hover {
+  background: var(--apple-gray-light);
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.group-chevron {
+  color: var(--apple-text-secondary);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.group-chevron.expanded {
+  transform: rotate(90deg);
 }
 
 .group-title {
