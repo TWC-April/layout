@@ -57,10 +57,10 @@ export const FixtureDimensionTool: React.FC<FixtureDimensionToolProps> = ({
 
   // Handle fixture selection from canvas
   React.useEffect(() => {
-    if (selectedFixtureId) {
+    if (selectedFixtureId && selectedFixtureId.trim() !== '') {
       if (!selectedFixtureId1) {
         setSelectedFixtureId1(selectedFixtureId);
-        // Clear selection after processing
+        // Clear selection after processing to allow next click
         if (onFixtureSelect) {
           setTimeout(() => onFixtureSelect(''), 100);
         }

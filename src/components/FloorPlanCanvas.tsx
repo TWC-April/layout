@@ -134,6 +134,12 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
 
 
   const handleFixtureMouseDown = useCallback((fixture: PlacedFixture, e: React.MouseEvent, isRotationHandle: boolean = false) => {
+    // If in annotation mode, don't handle fixture interaction here
+    // It's handled in the onMouseDown handler on the fixture div
+    if (isAddingFixtureDimension || isAddingCenterLine) {
+      return;
+    }
+    
     e.stopPropagation();
     
     // Right-click: delete fixture (don't start drag)
@@ -217,6 +223,11 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   }, [scaleInfo, displayedImageSize, onFixtureDelete, zoomLevel]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    // Don't handle movement if we're in annotation mode
+    if (isAddingFixtureDimension || isAddingCenterLine) {
+      return;
+    }
+    
     // Don't handle movement if we're deleting
     if (isDeletingRef.current) {
       return;
@@ -517,35 +528,42 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   fixtureRefs.current.delete(fixture.id);
                 }
               }}
-              className={`placed-fixture ${isSelected ? 'selected' : ''}`}
+              className={`placed-fixture ${isSelected ? 'selected' : ''} ${(isAddingFixtureDimension || isAddingCenterLine) ? 'annotation-mode' : ''}`}
               style={{
                 left: scaledX,
                 top: scaledY,
                 width: widthPx,
                 height: heightPx,
                 position: 'absolute',
-                cursor: 'move',
+                cursor: (isAddingFixtureDimension || isAddingCenterLine) ? 'pointer' : 'move',
                 overflow: 'visible', // Changed to visible to show rotation handle
                 transform: `rotate(${rotation}deg)`,
                 transformOrigin: 'center center',
                 willChange: draggedFixture?.id === fixture.id ? 'transform' : 'auto', // Optimize for dragging
+                pointerEvents: 'auto', // Ensure fixtures are clickable
               }}
               onMouseDown={(e) => {
-                // If in annotation mode, handle click for annotation selection
-                if ((isAddingFixtureDimension || isAddingCenterLine) && onFixtureClick) {
+                // If in annotation mode, prevent drag but allow click
+                if (isAddingFixtureDimension || isAddingCenterLine) {
                   e.stopPropagation();
-                  e.preventDefault();
-                  onFixtureClick(fixture.id);
+                  // Don't call handleFixtureMouseDown to prevent drag
                   return;
                 }
                 // Otherwise, handle normal fixture interaction
                 handleFixtureMouseDown(fixture, e, false);
               }}
               onClick={(e) => {
-                // Handle click for annotation mode (separate from mouseDown to avoid conflicts)
+                // Handle click for annotation mode
                 if ((isAddingFixtureDimension || isAddingCenterLine) && onFixtureClick) {
                   e.stopPropagation();
+                  e.preventDefault();
                   onFixtureClick(fixture.id);
+                }
+              }}
+              onMouseUp={(e) => {
+                // In annotation mode, prevent any drag completion
+                if (isAddingFixtureDimension || isAddingCenterLine) {
+                  e.stopPropagation();
                 }
               }}
               onContextMenu={(e) => {

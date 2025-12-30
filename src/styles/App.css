@@ -2515,3 +2515,14 @@ body {
   border-color: var(--apple-blue);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
 }
+
+/* Fixture in annotation mode */
+.placed-fixture.annotation-mode {
+  outline: 2px dashed var(--apple-blue);
+  outline-offset: 2px;
+}
+
+.placed-fixture.annotation-mode:hover {
+  outline-color: var(--apple-green);
+  outline-width: 3px;
+}

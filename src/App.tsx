@@ -538,6 +538,7 @@ function App() {
   const [selectedFixtureForAnnotation, setSelectedFixtureForAnnotation] = useState<string | null>(null);
 
   const handleFixtureClickForAnnotation = (fixtureId: string) => {
+    console.log('App: Fixture clicked for annotation', fixtureId);
     setSelectedFixtureForAnnotation(fixtureId);
   };
 
