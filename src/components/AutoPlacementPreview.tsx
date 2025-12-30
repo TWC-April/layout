@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PlacedFixture, ScaleInfo, PlacementArea } from '../types';
+import { realUnitsToPixels } from '../utils/scaleUtils';
 
 interface AutoPlacementPreviewProps {
   imageUrl: string;
@@ -54,15 +55,23 @@ export const AutoPlacementPreview: React.FC<AutoPlacementPreviewProps> = ({
     );
   }
 
-  // Convert area from mm to displayed pixels
+  // Calculate scale factors from calibration image to displayed image
   const scaleX = currentDisplayedImageSize.width / scaleInfo.imageWidth;
   const scaleY = currentDisplayedImageSize.height / scaleInfo.imageHeight;
   
+  // Convert area from millimeters to calibration pixels, then to displayed pixels
+  const areaCalPx = {
+    x: realUnitsToPixels(area.x, scaleInfo),
+    y: realUnitsToPixels(area.y, scaleInfo),
+    width: realUnitsToPixels(area.width, scaleInfo),
+    height: realUnitsToPixels(area.height, scaleInfo),
+  };
+  
   const areaPx = {
-    x: (area.x * scaleInfo.pixelsPerMillimeter) * scaleX,
-    y: (area.y * scaleInfo.pixelsPerMillimeter) * scaleY,
-    width: (area.width * scaleInfo.pixelsPerMillimeter) * scaleX,
-    height: (area.height * scaleInfo.pixelsPerMillimeter) * scaleY,
+    x: areaCalPx.x * scaleX,
+    y: areaCalPx.y * scaleY,
+    width: areaCalPx.width * scaleX,
+    height: areaCalPx.height * scaleY,
   };
 
   return (
@@ -97,11 +106,13 @@ export const AutoPlacementPreview: React.FC<AutoPlacementPreviewProps> = ({
         
         {/* Render preview fixtures */}
         {previewFixtures.map((fixture) => {
+          // Fixture positions are already in calibration image pixels
+          // Just scale to displayed image pixels
           const fixturePx = {
-            x: (fixture.position.x * scaleInfo.pixelsPerMillimeter) * scaleX,
-            y: (fixture.position.y * scaleInfo.pixelsPerMillimeter) * scaleY,
-            width: (fixture.width * scaleInfo.pixelsPerMillimeter) * scaleX,
-            height: (fixture.height * scaleInfo.pixelsPerMillimeter) * scaleY,
+            x: fixture.position.x * scaleX,
+            y: fixture.position.y * scaleY,
+            width: fixture.width * scaleInfo.pixelsPerMillimeter * scaleX,
+            height: fixture.height * scaleInfo.pixelsPerMillimeter * scaleY,
           };
           
           return (
