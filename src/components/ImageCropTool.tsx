@@ -33,6 +33,13 @@ export const ImageCropTool: React.FC<ImageCropToolProps> = ({
     return () => window.removeEventListener('resize', handleImageLoad);
   }, [handleImageLoad]);
 
+  // Reset crop selection when component mounts or imageUrl changes
+  useEffect(() => {
+    setCropStart(null);
+    setCropEnd(null);
+    setIsSelecting(false);
+  }, [imageUrl]);
+
   // Add global mouse up handler to ensure crop selection completes even if mouse leaves container
   useEffect(() => {
     const handleGlobalMouseUp = (e: MouseEvent) => {
