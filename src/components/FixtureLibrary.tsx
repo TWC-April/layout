@@ -60,7 +60,7 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
               className="import-stencil-button"
               title="Import PNG/JPEG fixtures"
             >
-              Import PNG Files
+              Import Custom Fixture
             </button>
             <button
               onClick={() => setShowAddForm(true)}

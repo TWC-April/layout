@@ -419,15 +419,12 @@ body {
 
 .fixture-library-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: nowrap;
+  flex-direction: column;
   gap: 12px;
+  margin-bottom: 20px;
 }
 
 .fixture-library-header h3 {
-  white-space: nowrap;
   margin-bottom: 0;
 }
 
