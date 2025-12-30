@@ -1418,6 +1418,14 @@ body {
   font-style: normal;
 }
 
+.empty-group-message {
+  color: var(--apple-text-secondary);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+  font-style: italic;
+}
+
 /* Fixture Group Display */
 .fixture-group {
   margin-bottom: 24px;

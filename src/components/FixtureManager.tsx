@@ -54,23 +54,21 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
 
   // Initialize expanded groups when groups change (expand all by default)
   useEffect(() => {
-    const groupNames = Object.keys(groupedFixtures.grouped);
-    if (groupNames.length > 0) {
-      setExpandedGroups((prev) => {
-        const newSet = new Set(prev);
-        groupNames.forEach((name) => {
-          if (!newSet.has(name)) {
-            newSet.add(name);
-          }
-        });
-        // Also ensure "Ungrouped" is expanded if it exists
-        if (groupedFixtures.ungrouped.length > 0) {
-          newSet.add('Ungrouped');
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      // Add all groups from the groups prop
+      groups.forEach((group) => {
+        if (!newSet.has(group.name)) {
+          newSet.add(group.name);
         }
-        return newSet;
       });
-    }
-  }, [groupedFixtures]);
+      // Also ensure "Ungrouped" is expanded if it exists
+      if (groupedFixtures.ungrouped.length > 0) {
+        newSet.add('Ungrouped');
+      }
+      return newSet;
+    });
+  }, [groups, groupedFixtures.ungrouped.length]);
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups((prev) => {
@@ -160,15 +158,15 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
     <div className="fixture-manager">
       <h3>Program</h3>
       
-      {/* Render grouped fixtures */}
-      {Object.entries(groupedFixtures.grouped).map(([groupName, fixtures]) => {
-        const isExpanded = isGroupExpanded(groupName);
-        const group = groups.find(g => g.name === groupName);
+      {/* Render all groups (including empty ones) */}
+      {groups.map((group) => {
+        const fixtures = groupedFixtures.grouped[group.name] || [];
+        const isExpanded = isGroupExpanded(group.name);
         return (
-          <div key={groupName} className="fixture-group">
+          <div key={group.id} className="fixture-group">
             <div 
               className="fixture-group-header"
-              onClick={() => toggleGroup(groupName)}
+              onClick={() => toggleGroup(group.name)}
               style={{ cursor: 'pointer' }}
             >
               <div className="group-header-left">
@@ -182,15 +180,15 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
                 >
                   <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <h4 className="group-title">{groupName}</h4>
+                <h4 className="group-title">{group.name}</h4>
               </div>
               <div className="group-header-right" onClick={(e) => e.stopPropagation()}>
                 <span className="group-count">({fixtures.length})</span>
-                {group && onDeleteGroup && (
+                {onDeleteGroup && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`Delete group "${groupName}"? Fixtures in this group will be moved to "Ungrouped".`)) {
+                      if (confirm(`Delete group "${group.name}"? Fixtures in this group will be moved to "Ungrouped".`)) {
                         onDeleteGroup(group.id);
                       }
                     }}
@@ -207,7 +205,11 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
             </div>
             {isExpanded && (
               <div className="custom-fixtures-list">
-                {fixtures.map(renderFixture)}
+                {fixtures.length > 0 ? (
+                  fixtures.map(renderFixture)
+                ) : (
+                  <p className="empty-group-message">No fixtures in this group yet.</p>
+                )}
               </div>
             )}
           </div>
