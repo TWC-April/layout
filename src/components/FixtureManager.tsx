@@ -10,6 +10,7 @@ interface FixtureManagerProps {
   onFixtureClick: (fixture: Fixture) => void;
   groups?: Group[];
   onCreateGroup?: (name: string) => void;
+  onDeleteGroup?: (groupId: string) => void;
 }
 
 export const FixtureManager: React.FC<FixtureManagerProps> = ({
@@ -19,6 +20,7 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
   onFixtureClick,
   groups = [],
   onCreateGroup,
+  onDeleteGroup,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const editingFixture = customFixtures.find((f) => f.id === editingId);
@@ -161,6 +163,7 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
       {/* Render grouped fixtures */}
       {Object.entries(groupedFixtures.grouped).map(([groupName, fixtures]) => {
         const isExpanded = isGroupExpanded(groupName);
+        const group = groups.find(g => g.name === groupName);
         return (
           <div key={groupName} className="fixture-group">
             <div 
@@ -181,7 +184,26 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
                 </svg>
                 <h4 className="group-title">{groupName}</h4>
               </div>
-              <span className="group-count">({fixtures.length})</span>
+              <div className="group-header-right" onClick={(e) => e.stopPropagation()}>
+                <span className="group-count">({fixtures.length})</span>
+                {group && onDeleteGroup && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete group "${groupName}"? Fixtures in this group will be moved to "Ungrouped".`)) {
+                        onDeleteGroup(group.id);
+                      }
+                    }}
+                    className="delete-group-button-header"
+                    title="Delete Group"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3.5 3.5H10.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M2.5 3.5H11.5L11 11.5C11 12.0523 10.5523 12.5 10 12.5H4C3.44772 12.5 3 12.0523 3 11.5L2.5 3.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M5.5 6V10.5M8.5 6V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
             {isExpanded && (
               <div className="custom-fixtures-list">

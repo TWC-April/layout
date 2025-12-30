@@ -91,12 +91,11 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
           onFixtureClick={onFixtureClick}
           groups={groups}
           onCreateGroup={createGroup}
+          onDeleteGroup={handleDeleteGroup}
         />
 
         <GroupManager
-          groups={groups}
           onCreateGroup={createGroup}
-          onDeleteGroup={handleDeleteGroup}
         />
       </div>
 

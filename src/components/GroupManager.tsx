@@ -1,16 +1,11 @@
 import React, { useState } from 'react';
-import { Group } from '../hooks/useGroups';
 
 interface GroupManagerProps {
-  groups: Group[];
   onCreateGroup: (name: string) => void;
-  onDeleteGroup: (id: string) => void;
 }
 
 export const GroupManager: React.FC<GroupManagerProps> = ({
-  groups,
   onCreateGroup,
-  onDeleteGroup,
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -63,34 +58,6 @@ export const GroupManager: React.FC<GroupManagerProps> = ({
           </div>
         </form>
       )}
-
-      <div className="groups-list">
-        {groups.length === 0 ? (
-          <p className="no-groups-message">No groups yet. Create one to organize your fixtures.</p>
-        ) : (
-          groups.map((group) => (
-            <div key={group.id} className="group-item">
-              <span className="group-name">{group.name}</span>
-              <div className="group-actions">
-                <button
-                  onClick={() => {
-                    if (confirm(`Delete group "${group.name}"? Fixtures in this group will become ungrouped.`)) {
-                      onDeleteGroup(group.id);
-                    }
-                  }}
-                  className="delete-group-button"
-                  title="Delete Group"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3.5 3.5H10.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M2.5 3.5H11.5L11 11.5C11 12.0523 10.5523 12.5 10 12.5H4C3.44772 12.5 3 12.0523 3 11.5L2.5 3.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M5.5 6V10.5M8.5 6V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 };
