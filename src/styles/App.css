@@ -1496,11 +1496,34 @@ body {
   justify-content: center;
   border-radius: var(--apple-border-radius-small);
   transition: all var(--apple-transition-duration) ease;
+  opacity: 0;
+}
+
+.fixture-group-header:hover .delete-group-button-header {
+  opacity: 1;
 }
 
 .delete-group-button-header:hover {
   background: rgba(255, 59, 48, 0.1);
   color: var(--apple-red);
+}
+
+.group-name-input-inline {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+  border: 1px solid var(--apple-blue);
+  border-radius: var(--apple-border-radius-small);
+  padding: 4px 8px;
+  background: var(--apple-white);
+  outline: none;
+  min-width: 100px;
+  flex: 1;
+}
+
+.group-title {
+  cursor: text;
+  user-select: none;
 }
 
 /* Group Selection in Forms */

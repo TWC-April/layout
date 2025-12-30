@@ -35,6 +35,7 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
   const {
     groups,
     createGroup,
+    updateGroup,
     deleteGroup,
   } = useGroups();
 
@@ -49,6 +50,22 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
         }
       });
       deleteGroup(groupId);
+    }
+  };
+
+  // When a group is renamed, update all fixtures that belong to that group
+  const handleUpdateGroup = (groupId: string, newName: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (group) {
+      const oldName = group.name;
+      // Update group name
+      updateGroup(groupId, newName);
+      // Update all fixtures that belong to this group
+      customFixtures.forEach((fixture) => {
+        if (fixture.group === oldName) {
+          onUpdateFixture(fixture.id, { group: newName });
+        }
+      });
     }
   };
 
@@ -92,6 +109,7 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
           groups={groups}
           onCreateGroup={createGroup}
           onDeleteGroup={handleDeleteGroup}
+          onUpdateGroup={handleUpdateGroup}
         />
 
         <GroupManager

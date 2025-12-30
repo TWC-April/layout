@@ -11,6 +11,7 @@ interface FixtureManagerProps {
   groups?: Group[];
   onCreateGroup?: (name: string) => void;
   onDeleteGroup?: (groupId: string) => void;
+  onUpdateGroup?: (id: string, newName: string) => void;
 }
 
 export const FixtureManager: React.FC<FixtureManagerProps> = ({
@@ -21,10 +22,13 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
   groups = [],
   onCreateGroup,
   onDeleteGroup,
+  onUpdateGroup,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const editingFixture = customFixtures.find((f) => f.id === editingId);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingGroupName, setEditingGroupName] = useState('');
 
   const handleUpdate = (fixture: Omit<Fixture, 'id' | 'isCustom' | 'createdAt'>) => {
     if (editingId) {
@@ -162,11 +166,12 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
       {groups.map((group) => {
         const fixtures = groupedFixtures.grouped[group.name] || [];
         const isExpanded = isGroupExpanded(group.name);
+        const isEditing = editingGroupId === group.id;
         return (
           <div key={group.id} className="fixture-group">
             <div 
               className="fixture-group-header"
-              onClick={() => toggleGroup(group.name)}
+              onClick={() => !isEditing && toggleGroup(group.name)}
               style={{ cursor: 'pointer' }}
             >
               <div className="group-header-left">
@@ -180,7 +185,46 @@ export const FixtureManager: React.FC<FixtureManagerProps> = ({
                 >
                   <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <h4 className="group-title">{group.name}</h4>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editingGroupName}
+                    onChange={(e) => setEditingGroupName(e.target.value)}
+                    onBlur={() => {
+                      if (editingGroupName.trim() && editingGroupName.trim() !== group.name && onUpdateGroup) {
+                        onUpdateGroup(group.id, editingGroupName.trim());
+                      }
+                      setEditingGroupId(null);
+                      setEditingGroupName('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editingGroupName.trim() && editingGroupName.trim() !== group.name && onUpdateGroup) {
+                          onUpdateGroup(group.id, editingGroupName.trim());
+                        }
+                        setEditingGroupId(null);
+                        setEditingGroupName('');
+                      } else if (e.key === 'Escape') {
+                        setEditingGroupId(null);
+                        setEditingGroupName('');
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="group-name-input-inline"
+                    autoFocus
+                  />
+                ) : (
+                  <h4 
+                    className="group-title"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setEditingGroupId(group.id);
+                      setEditingGroupName(group.name);
+                    }}
+                  >
+                    {group.name}
+                  </h4>
+                )}
               </div>
               <div className="group-header-right" onClick={(e) => e.stopPropagation()}>
                 <span className="group-count">({fixtures.length})</span>
