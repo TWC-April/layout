@@ -49,7 +49,6 @@ export const GroupManager: React.FC<GroupManagerProps> = ({
   return (
     <div className="group-manager">
       <div className="group-manager-header">
-        <h4>Groups</h4>
         <button
           onClick={() => setShowCreateForm(true)}
           className="create-group-button"
