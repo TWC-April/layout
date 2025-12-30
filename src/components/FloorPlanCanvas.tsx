@@ -525,7 +525,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     textAnchor="middle"
                     transform={`rotate(${angle} ${midX} ${midY})`}
                   >
-                    {line.realLength.toLocaleString()} mm
+                    {line.realLength.toLocaleString()}
                   </text>
                 </g>
               );
@@ -798,7 +798,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   const pixelDistance = Math.sqrt(dx * dx + dy * dy);
                   const realLength = pixelDistance / scaleInfo.pixelsPerMillimeter;
                   
-                  const textContent = `${Math.round(realLength).toLocaleString()} mm`;
+                  const textContent = `${Math.round(realLength).toLocaleString()}`;
                   const textWidth = textContent.length * 7; // Approximate width
                   
                   return (
@@ -929,7 +929,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   </g>
                   {/* White background for text */}
                   {(() => {
-                    const textContent = dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`;
+                    const textContent = dim.label || `${Math.round(dim.realLength).toLocaleString()}`;
                     const textWidth = textContent.length * 7; // Approximate width based on font size
                     const padding = 4;
                     
