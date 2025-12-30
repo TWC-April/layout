@@ -421,7 +421,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
           }}
           onMouseMove={(e) => {
             // Handle mouse move for dimension preview
+            // Skip if user is interacting with input fields or other UI elements
             if (isAddingFixtureDimension && onFloorPlanMouseMove && displayedImageSize && scaleInfo) {
+              const target = e.target as HTMLElement;
+              // Don't process mouse move if hovering over input fields or buttons
+              if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.closest('input') || target.closest('button')) {
+                return;
+              }
               const rect = e.currentTarget.getBoundingClientRect();
               const x = e.clientX - rect.left;
               const y = e.clientY - rect.top;

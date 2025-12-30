@@ -1,4 +1,4 @@
-import { useState, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react';
+import { useState, useCallback, useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
 import { ScaleInfo, FixtureDimensionLine, Position } from '../types';
 import { pixelsToRealUnits, realUnitsToPixels, calculateLineLength } from '../utils/scaleUtils';
 
@@ -35,6 +35,7 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [dimensionInput, setDimensionInput] = useState('');
   const [isInputMode, setIsInputMode] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Handle Shift key for straight line constraint
   useEffect(() => {
@@ -107,6 +108,11 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
 
   const handleFloorPlanMouseMove = useCallback((position: Position) => {
     if (!startPos || endPos) return;
+    
+    // Don't update preview if user is typing in the input field
+    if (inputRef.current && document.activeElement === inputRef.current) {
+      return;
+    }
     
     // Convert from displayed pixels to calibration pixels
     const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
@@ -261,6 +267,7 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
           <label>
             Or enter dimension (mm) to calculate second point:
             <input
+              ref={inputRef}
               type="number"
               step="0.1"
               min="0.1"
@@ -271,6 +278,12 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
                 if (!isNaN(dim) && dim > 0) {
                   handleDimensionInput(dim);
                 }
+              }}
+              onFocus={() => {
+                // Stop mouse move updates when input is focused
+              }}
+              onBlur={() => {
+                // Resume mouse move updates when input loses focus
               }}
               placeholder="e.g., 5000"
               className="dimension-label-input"
