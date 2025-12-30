@@ -758,31 +758,31 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 {/* Start point crosshair */}
                 <g stroke="#ff4444" strokeWidth="2" strokeLinecap="round">
                   <line
-                    x1={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) - 6}
+                    x1={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) - 4.2}
                     y1={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
-                    x2={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) + 6}
+                    x2={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) + 4.2}
                     y2={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
                   />
                   <line
                     x1={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
-                    y1={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) - 6}
+                    y1={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) - 4.2}
                     x2={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
-                    y2={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) + 6}
+                    y2={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) + 4.2}
                   />
                 </g>
                 {/* End point crosshair */}
                 <g stroke={dimensionPreviewState.endPos ? "#007AFF" : "#ff4444"} strokeWidth="2" strokeLinecap="round">
                   <line
-                    x1={dimensionPreviewState.currentPos.x - 6}
+                    x1={dimensionPreviewState.currentPos.x - 4.2}
                     y1={dimensionPreviewState.currentPos.y}
-                    x2={dimensionPreviewState.currentPos.x + 6}
+                    x2={dimensionPreviewState.currentPos.x + 4.2}
                     y2={dimensionPreviewState.currentPos.y}
                   />
                   <line
                     x1={dimensionPreviewState.currentPos.x}
-                    y1={dimensionPreviewState.currentPos.y - 6}
+                    y1={dimensionPreviewState.currentPos.y - 4.2}
                     x2={dimensionPreviewState.currentPos.x}
-                    y2={dimensionPreviewState.currentPos.y + 6}
+                    y2={dimensionPreviewState.currentPos.y + 4.2}
                   />
                 </g>
                 {dimensionPreviewState.endPos && (() => {
@@ -900,31 +900,31 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   {/* Start point crosshair */}
                   <g stroke="#007AFF" strokeWidth="2" strokeLinecap="round">
                     <line
-                      x1={scaledStartX - 6}
+                      x1={scaledStartX - 4.2}
                       y1={scaledStartY}
-                      x2={scaledStartX + 6}
+                      x2={scaledStartX + 4.2}
                       y2={scaledStartY}
                     />
                     <line
                       x1={scaledStartX}
-                      y1={scaledStartY - 6}
+                      y1={scaledStartY - 4.2}
                       x2={scaledStartX}
-                      y2={scaledStartY + 6}
+                      y2={scaledStartY + 4.2}
                     />
                   </g>
                   {/* End point crosshair */}
                   <g stroke="#007AFF" strokeWidth="2" strokeLinecap="round">
                     <line
-                      x1={scaledEndX - 6}
+                      x1={scaledEndX - 4.2}
                       y1={scaledEndY}
-                      x2={scaledEndX + 6}
+                      x2={scaledEndX + 4.2}
                       y2={scaledEndY}
                     />
                     <line
                       x1={scaledEndX}
-                      y1={scaledEndY - 6}
+                      y1={scaledEndY - 4.2}
                       x2={scaledEndX}
-                      y2={scaledEndY + 6}
+                      y2={scaledEndY + 4.2}
                     />
                   </g>
                   {/* White background for text */}
