@@ -387,12 +387,34 @@ body {
   transform: translateY(-1px);
 }
 
-.fixture-library h2 {
-  margin-bottom: 20px;
+.fixture-library-card {
+  background: var(--apple-white);
+  padding: 20px;
+  border-radius: var(--apple-border-radius);
+  margin-bottom: 16px;
+  box-shadow: var(--apple-shadow);
+}
+
+.fixture-library-card h3 {
+  margin-bottom: 16px;
   color: var(--apple-text-primary);
-  font-size: 21px;
+  font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.016em;
+  letter-spacing: -0.022em;
+}
+
+.fixture-library-card .group-manager {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 20px;
+  border: none;
+  box-shadow: none;
+}
+
+.fixture-library-card .fixture-manager {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .fixture-library-header {

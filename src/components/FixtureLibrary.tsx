@@ -51,40 +51,42 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
 
   return (
     <div className="fixture-library">
-      <div className="fixture-library-header">
-        <h2>Fixture Library</h2>
-        <div className="header-buttons">
-          <button
-            onClick={() => setShowPngImporter(true)}
-            className="import-stencil-button"
-            title="Import PNG/JPEG fixtures"
-          >
-            📎 Import PNG Files
-          </button>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="add-fixture-button"
-          >
-            + Miscellaneous
-          </button>
+      <div className="fixture-library-card">
+        <div className="fixture-library-header">
+          <h3>Fixture Library</h3>
+          <div className="header-buttons">
+            <button
+              onClick={() => setShowPngImporter(true)}
+              className="import-stencil-button"
+              title="Import PNG/JPEG fixtures"
+            >
+              📎 Import PNG Files
+            </button>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="add-fixture-button"
+            >
+              + Miscellaneous
+            </button>
+          </div>
         </div>
+
+        <GroupManager
+          groups={groups}
+          onCreateGroup={createGroup}
+          onUpdateGroup={updateGroup}
+          onDeleteGroup={handleDeleteGroup}
+        />
+
+        <FixtureManager
+          customFixtures={customFixtures}
+          onUpdate={onUpdateFixture}
+          onDelete={onDeleteFixture}
+          onFixtureClick={onFixtureClick}
+          groups={groups}
+          onCreateGroup={createGroup}
+        />
       </div>
-
-      <GroupManager
-        groups={groups}
-        onCreateGroup={createGroup}
-        onUpdateGroup={updateGroup}
-        onDeleteGroup={handleDeleteGroup}
-      />
-
-      <FixtureManager
-        customFixtures={customFixtures}
-        onUpdate={onUpdateFixture}
-        onDelete={onDeleteFixture}
-        onFixtureClick={onFixtureClick}
-        groups={groups}
-        onCreateGroup={createGroup}
-      />
 
       {DEFAULT_FIXTURES.length > 0 && (
         <div className="fixture-list">
