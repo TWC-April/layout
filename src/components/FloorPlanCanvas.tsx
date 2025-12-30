@@ -569,7 +569,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   fixtureRefs.current.delete(fixture.id);
                 }
               }}
-              className={`placed-fixture ${isSelected ? 'selected' : ''} ${(isAddingFixtureDimension || isAddingCenterLine) ? 'annotation-mode' : ''}`}
+              className={`placed-fixture ${isSelected ? 'selected' : ''}`}
               style={{
                 left: scaledX,
                 top: scaledY,
