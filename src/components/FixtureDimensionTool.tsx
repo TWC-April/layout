@@ -142,8 +142,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       setCurrentPos(newEndDisplayPos);
       setIsAdjustingSecondPoint(false); // Exit adjustment mode - position is now locked
     } else if (endPos && fixedDistance !== null && !isAdjustingSecondPoint) {
-      // If position is locked, clicking again re-enters adjustment mode
-      setIsAdjustingSecondPoint(true);
+      // If position is locked, clicking confirms the dimension
+      handleConfirm();
     } else if (!endPos && !isInputMode) {
       // Second click: Set end position (normal click mode)
       const constrainedPos = constrainToStraightLine(startPos, calibrationPos);
@@ -403,13 +403,13 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
             Move mouse to adjust second point position (360° rotation)
             {isShiftPressed && <span className="shift-hint"> • Shift for 90° increments</span>}
           </p>
-          <p className="hint-text">Click on the floor plan to lock position, or click "Add Dimension" to confirm</p>
+          <p className="hint-text">Click on the floor plan to lock and confirm the dimension</p>
         </div>
       )}
       
       {startPos && endPos && fixedDistance !== null && !isAdjustingSecondPoint && (
         <div className="dimension-preview">
-          <p className="hint-text">Second point locked. Click "Add Dimension" to confirm, or click on floor plan to adjust again.</p>
+          <p className="hint-text">Second point locked. Click on the floor plan to confirm the dimension.</p>
         </div>
       )}
 
@@ -427,13 +427,6 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
 
       <div className="tool-actions">
         <button
-          onClick={handleConfirm}
-          className="confirm-button"
-          disabled={!startPos || !endPos}
-        >
-          Add Dimension
-        </button>
-        <button
           onClick={handleReset}
           className="reset-button"
           disabled={!startPos}
@@ -449,9 +442,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       </div>
 
       <div className="tool-instructions">
-        <p><strong>Instructions:</strong> Click two points on the floor plan to measure the distance between them.</p>
-        <p>Hold <strong>Shift</strong> while clicking or moving mouse for straight lines (horizontal/vertical).</p>
-        <p>After clicking the first point, you can type a dimension in mm to automatically calculate the second point.</p>
+        <p><strong>Instructions:</strong> Click first point, type dimension (e.g., 1000mm), adjust direction, then click to confirm.</p>
+        <p>Hold <strong>Shift</strong> while moving mouse for 90° increments.</p>
         {startPos && (
           <p className="highlight-text">
             First point set ✓
