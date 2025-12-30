@@ -15,6 +15,8 @@ interface FloorPlanCanvasProps {
   onFixtureDelete: (id: string) => void;
   onFixtureMoveComplete?: () => void;
   onFixtureRotateComplete?: () => void;
+  onDimensionLineDelete?: (id: string) => void;
+  onDimensionLabelMove?: (id: string, position: Position) => void;
   placementArea?: PlacementArea | null;
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
   isAddingFixtureDimension?: boolean;
@@ -42,6 +44,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onFixtureDelete,
   onFixtureMoveComplete,
   onFixtureRotateComplete,
+  onDimensionLineDelete,
+  onDimensionLabelMove,
   placementArea,
   onDisplayedImageSizeChange,
   isAddingFixtureDimension = false,
@@ -811,8 +815,16 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               const scaledEndX = dim.endPosition.x * scaleX;
               const scaledEndY = dim.endPosition.y * scaleY;
               
+              // Use custom label position or default to middle of line
               const midX = (scaledStartX + scaledEndX) / 2;
               const midY = (scaledStartY + scaledEndY) / 2;
+              const labelX = dim.labelPosition 
+                ? dim.labelPosition.x * scaleX 
+                : midX;
+              const labelY = dim.labelPosition 
+                ? dim.labelPosition.y * scaleY 
+                : midY - 10;
+              
               const angle = Math.atan2(
                 scaledEndY - scaledStartY,
                 scaledEndX - scaledStartX
@@ -842,16 +854,83 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     fill="#007AFF"
                   />
                   <text
-                    x={midX}
-                    y={midY - 10}
+                    x={labelX}
+                    y={labelY}
                     fill="#007AFF"
                     fontSize="12"
                     fontWeight="bold"
                     textAnchor="middle"
-                    transform={`rotate(${angle} ${midX} ${midY})`}
+                    transform={dim.labelPosition ? undefined : `rotate(${angle} ${labelX} ${labelY})`}
+                    style={{
+                      pointerEvents: 'auto',
+                      cursor: 'move',
+                    }}
+                    onMouseDown={(e) => {
+                      if (onDimensionLabelMove) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const startX = e.clientX;
+                        const startY = e.clientY;
+                        const startLabelX = labelX;
+                        const startLabelY = labelY;
+                        
+                        const handleMouseMove = (moveEvent: MouseEvent) => {
+                          const deltaX = (moveEvent.clientX - startX) / scaleX;
+                          const deltaY = (moveEvent.clientY - startY) / scaleY;
+                          const newPos: Position = {
+                            x: (startLabelX / scaleX) + deltaX,
+                            y: (startLabelY / scaleY) + deltaY,
+                          };
+                          onDimensionLabelMove(dim.id, newPos);
+                        };
+                        
+                        const handleMouseUp = () => {
+                          document.removeEventListener('mousemove', handleMouseMove);
+                          document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', handleMouseUp);
+                      }
+                    }}
                   >
                     {dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`}
                   </text>
+                  {/* Delete button */}
+                  {onDimensionLineDelete && (
+                    <g
+                      style={{
+                        pointerEvents: 'auto',
+                        cursor: 'pointer',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Delete this dimension line?')) {
+                          onDimensionLineDelete(dim.id);
+                        }
+                      }}
+                    >
+                      <circle
+                        cx={scaledEndX + 15}
+                        cy={scaledEndY - 15}
+                        r="8"
+                        fill="#FF3B30"
+                        stroke="white"
+                        strokeWidth="1.5"
+                      />
+                      <text
+                        x={scaledEndX + 15}
+                        y={scaledEndY - 15}
+                        fill="white"
+                        fontSize="10"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                      >
+                        ×
+                      </text>
+                    </g>
+                  )}
                 </g>
               );
             })}

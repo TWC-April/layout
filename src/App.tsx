@@ -499,6 +499,30 @@ function App() {
     });
   };
 
+  const handleDimensionLineDelete = (id: string) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        fixtureDimensionLines: prev.fixtureDimensionLines.filter(dim => dim.id !== id),
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+  };
+
+  const handleDimensionLabelMove = (id: string, position: Position) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        fixtureDimensionLines: prev.fixtureDimensionLines.map(dim => 
+          dim.id === id ? { ...dim, labelPosition: position } : dim
+        ),
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+  };
+
   const handleCenterLineComplete = (centerLine: CenterLine) => {
     setState((prev) => {
       const newState = {
@@ -771,6 +795,8 @@ function App() {
                     onFloorPlanClick={handleFloorPlanClick}
                     onFloorPlanMouseMove={handleFloorPlanMouseMove}
                     dimensionPreviewState={dimensionPreviewState || undefined}
+                    onDimensionLineDelete={handleDimensionLineDelete}
+                    onDimensionLabelMove={handleDimensionLabelMove}
                   />
                 ) : (
                   <div className="empty-state">

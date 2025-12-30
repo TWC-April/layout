@@ -56,6 +56,7 @@ export interface FixtureDimensionLine {
   endPosition: Position; // End point on floor plan in calibration pixels
   realLength: number; // Calculated distance in mm
   label?: string; // Optional custom label
+  labelPosition?: Position; // Custom label position in calibration pixels (defaults to middle of line)
   imageWidth: number; // displayed image width in pixels when created
   imageHeight: number; // displayed image height in pixels when created
 }

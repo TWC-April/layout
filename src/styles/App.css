@@ -2516,6 +2516,30 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
 }
 
+/* Dimension label interaction */
+.fixture-dimension-lines-overlay text {
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.fixture-dimension-lines-overlay text:hover {
+  opacity: 0.8;
+}
+
+/* Delete button for dimension lines */
+.dimension-delete-button {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.fixture-dimension-lines-overlay g:hover .dimension-delete-button {
+  opacity: 1;
+}
+
+.dimension-delete-button:hover {
+  opacity: 1 !important;
+}
+
 /* Fixture in annotation mode */
 .placed-fixture.annotation-mode {
   outline: 2px dashed var(--apple-blue);

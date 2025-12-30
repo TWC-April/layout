@@ -188,12 +188,17 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
     // Convert to millimeters
     const realLength = pixelsToRealUnits(pixelDistance, scaleInfo);
 
+    // Calculate default label position (middle of line)
+    const midX = (startPos.x + endPos.x) / 2;
+    const midY = (startPos.y + endPos.y) / 2;
+    
     const dimension: FixtureDimensionLine = {
       id: `fixture-dim-${Date.now()}`,
       startPosition: startPos,
       endPosition: endPos,
       realLength,
       label: customLabel.trim() || undefined,
+      labelPosition: { x: midX, y: midY }, // Default to middle, user can move it
       imageWidth: displayedImageSize.width,
       imageHeight: displayedImageSize.height,
     };
