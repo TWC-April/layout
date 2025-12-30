@@ -10,7 +10,10 @@ import { FixtureLibrary } from './components/FixtureLibrary';
 import { AreaSelectionTool } from './components/AreaSelectionTool';
 import { GroupSelector } from './components/GroupSelector';
 import { AutoPlacementPreview } from './components/AutoPlacementPreview';
-import { FloorPlanState, PlacedFixture, ScaleInfo, DimensionLine, Fixture, PlacementArea } from './types';
+import { FixtureDimensionTool } from './components/FixtureDimensionTool';
+import { TextAnnotationTool } from './components/TextAnnotationTool';
+import { CenterLineTool } from './components/CenterLineTool';
+import { FloorPlanState, PlacedFixture, ScaleInfo, DimensionLine, Fixture, PlacementArea, FixtureDimensionLine, CenterLine, TextAnnotation } from './types';
 import { useCustomFixtures } from './hooks/useCustomFixtures';
 import { useGroups } from './hooks/useGroups';
 import { checkFit } from './utils/scaleUtils';
@@ -30,6 +33,13 @@ function App() {
     isCropping: false,
     placementArea: null,
     isSelectingArea: false,
+    fixtureDimensionLines: [],
+    centerLines: [],
+    textAnnotations: [],
+    fixtureAnnotations: [],
+    isAddingFixtureDimension: false,
+    isAddingCenterLine: false,
+    isAddingTextAnnotation: false,
   });
 
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -117,7 +127,7 @@ function App() {
   }, []);
 
   const handleImageUpload = (url: string, width: number, height: number) => {
-    const newState = {
+    const newState: FloorPlanState = {
       imageUrl: url,
       scaleInfo: null,
       dimensionLines: [],
@@ -126,6 +136,13 @@ function App() {
       isCropping: false, // Don't show crop tool by default
       placementArea: null,
       isSelectingArea: false,
+      fixtureDimensionLines: [],
+      centerLines: [],
+      textAnnotations: [],
+      fixtureAnnotations: [],
+      isAddingFixtureDimension: false,
+      isAddingCenterLine: false,
+      isAddingTextAnnotation: false,
     };
     saveToHistory(newState);
     setState(newState);
@@ -442,6 +459,88 @@ function App() {
     }));
   };
 
+  // Annotation handlers
+  const handleStartFixtureDimension = () => {
+    setState((prev) => ({
+      ...prev,
+      isAddingFixtureDimension: true,
+      isAddingCenterLine: false,
+      isAddingTextAnnotation: false,
+    }));
+  };
+
+  const handleStartCenterLine = () => {
+    setState((prev) => ({
+      ...prev,
+      isAddingFixtureDimension: false,
+      isAddingCenterLine: true,
+      isAddingTextAnnotation: false,
+    }));
+  };
+
+  const handleStartTextAnnotation = () => {
+    setState((prev) => ({
+      ...prev,
+      isAddingFixtureDimension: false,
+      isAddingCenterLine: false,
+      isAddingTextAnnotation: true,
+    }));
+  };
+
+  const handleFixtureDimensionComplete = (dimension: FixtureDimensionLine) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        fixtureDimensionLines: [...prev.fixtureDimensionLines, dimension],
+        isAddingFixtureDimension: false,
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+    setSelectedFixtureForAnnotation(null);
+  };
+
+  const handleCenterLineComplete = (centerLine: CenterLine) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        centerLines: [...prev.centerLines, centerLine],
+        isAddingCenterLine: false,
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+    setSelectedFixtureForAnnotation(null);
+  };
+
+  const handleTextAnnotationComplete = (annotation: TextAnnotation) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        textAnnotations: [...prev.textAnnotations, annotation],
+        isAddingTextAnnotation: false,
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+  };
+
+  const handleCancelAnnotation = () => {
+    setState((prev) => ({
+      ...prev,
+      isAddingFixtureDimension: false,
+      isAddingCenterLine: false,
+      isAddingTextAnnotation: false,
+    }));
+    setSelectedFixtureForAnnotation(null);
+  };
+
+  const [selectedFixtureForAnnotation, setSelectedFixtureForAnnotation] = useState<string | null>(null);
+
+  const handleFixtureClickForAnnotation = (fixtureId: string) => {
+    setSelectedFixtureForAnnotation(fixtureId);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
@@ -526,16 +625,41 @@ function App() {
                     </div>
                   )}
                 </div>
-                <FixtureLibrary
-                  customFixtures={customFixtures}
-                  onAddFixture={addFixture}
-                  onBulkAddFixtures={bulkAddFixtures}
-                  onUpdateFixture={updateFixture}
-                  onDeleteFixture={deleteFixture}
-                  onFixtureClick={handleFixtureClick}
-                  onStartAreaSelection={handleStartAreaSelection}
-                  isSelectingArea={state.isSelectingArea}
-                />
+                    {state.isAddingFixtureDimension && state.scaleInfo && displayedImageSize ? (
+                      <FixtureDimensionTool
+                        fixtures={state.fixtures}
+                        scaleInfo={state.scaleInfo}
+                        displayedImageSize={displayedImageSize}
+                        onDimensionComplete={handleFixtureDimensionComplete}
+                        onCancel={handleCancelAnnotation}
+                        selectedFixtureId={selectedFixtureForAnnotation}
+                        onFixtureSelect={setSelectedFixtureForAnnotation}
+                      />
+                    ) : state.isAddingCenterLine && state.scaleInfo && displayedImageSize ? (
+                      <CenterLineTool
+                        fixtures={state.fixtures}
+                        scaleInfo={state.scaleInfo}
+                        displayedImageSize={displayedImageSize}
+                        onCenterLineComplete={handleCenterLineComplete}
+                        onCancel={handleCancelAnnotation}
+                        selectedFixtureId={selectedFixtureForAnnotation}
+                        onFixtureSelect={setSelectedFixtureForAnnotation}
+                      />
+                    ) : (
+                      <FixtureLibrary
+                        customFixtures={customFixtures}
+                        onAddFixture={addFixture}
+                        onBulkAddFixtures={bulkAddFixtures}
+                        onUpdateFixture={updateFixture}
+                        onDeleteFixture={deleteFixture}
+                        onFixtureClick={handleFixtureClick}
+                        onStartAreaSelection={handleStartAreaSelection}
+                        isSelectingArea={state.isSelectingArea}
+                        onStartFixtureDimension={handleStartFixtureDimension}
+                        onStartCenterLine={handleStartCenterLine}
+                        onStartTextAnnotation={handleStartTextAnnotation}
+                      />
+                    )}
                 
                 {state.placementArea && !state.isSelectingArea && (
                   <div className="auto-placement-sidebar">
@@ -587,12 +711,23 @@ function App() {
                     onConfirm={handleConfirmPlacement}
                     onCancel={handleCancelPlacement}
                   />
+                ) : state.isAddingTextAnnotation && state.scaleInfo && displayedImageSize ? (
+                  <TextAnnotationTool
+                    imageUrl={state.imageUrl}
+                    scaleInfo={state.scaleInfo}
+                    displayedImageSize={displayedImageSize}
+                    onAnnotationComplete={handleTextAnnotationComplete}
+                    onCancel={handleCancelAnnotation}
+                  />
                 ) : state.scaleInfo ? (
                   <FloorPlanCanvas
                     imageUrl={state.imageUrl}
                     scaleInfo={state.scaleInfo}
                     dimensionLines={state.dimensionLines}
                     fixtures={state.fixtures}
+                    fixtureDimensionLines={state.fixtureDimensionLines}
+                    centerLines={state.centerLines}
+                    textAnnotations={state.textAnnotations}
                     onFixtureMove={handleFixtureMove}
                     onFixtureRotate={handleFixtureRotate}
                     onFixtureDelete={handleFixtureDelete}
@@ -600,6 +735,9 @@ function App() {
                     onFixtureRotateComplete={handleFixtureRotateComplete}
                     placementArea={state.placementArea}
                     onDisplayedImageSizeChange={setDisplayedImageSize}
+                    isAddingFixtureDimension={state.isAddingFixtureDimension}
+                    isAddingCenterLine={state.isAddingCenterLine}
+                    onFixtureClick={handleFixtureClickForAnnotation}
                   />
                 ) : (
                   <div className="empty-state">

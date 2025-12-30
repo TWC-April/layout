@@ -50,6 +50,46 @@ export interface PlacementArea {
   height: number; // in millimeters
 }
 
+export interface FixtureDimensionLine {
+  id: string;
+  fixtureId1: string; // First fixture
+  fixtureId2: string; // Second fixture
+  startPosition: Position; // Start point (center of fixture 1) in calibration pixels
+  endPosition: Position; // End point (center of fixture 2) in calibration pixels
+  realLength: number; // Calculated distance in mm
+  label?: string; // Optional custom label
+  imageWidth: number; // displayed image width in pixels when created
+  imageHeight: number; // displayed image height in pixels when created
+}
+
+export interface CenterLine {
+  id: string;
+  fixtureId1: string;
+  fixtureId2: string;
+  start: Position; // Center of fixture 1 in calibration pixels
+  end: Position; // Center of fixture 2 in calibration pixels
+  imageWidth: number; // displayed image width in pixels when created
+  imageHeight: number; // displayed image height in pixels when created
+}
+
+export interface TextAnnotation {
+  id: string;
+  text: string;
+  position: Position; // Absolute position on floor plan in calibration pixels
+  fontSize?: number;
+  color?: string;
+  backgroundColor?: string;
+  rotation?: number;
+  imageWidth: number; // displayed image width in pixels when created
+  imageHeight: number; // displayed image height in pixels when created
+}
+
+export interface FixtureAnnotation {
+  id: string;
+  fixtureId: string; // Reference to the fixture
+  note: string; // e.g., "Center of 2 tables"
+}
+
 export interface FloorPlanState {
   imageUrl: string | null;
   scaleInfo: ScaleInfo | null;
@@ -59,5 +99,12 @@ export interface FloorPlanState {
   isCropping: boolean;
   placementArea: PlacementArea | null; // Currently selected area for auto-placement
   isSelectingArea: boolean; // Whether user is in area selection mode
+  fixtureDimensionLines: FixtureDimensionLine[]; // Dimensions between fixtures
+  centerLines: CenterLine[]; // Center lines between fixtures
+  textAnnotations: TextAnnotation[]; // Text notes on floor plan
+  fixtureAnnotations: FixtureAnnotation[]; // Notes attached to fixtures
+  isAddingFixtureDimension?: boolean; // Whether user is adding fixture dimension
+  isAddingCenterLine?: boolean; // Whether user is adding center line
+  isAddingTextAnnotation?: boolean; // Whether user is adding text annotation
 }
 

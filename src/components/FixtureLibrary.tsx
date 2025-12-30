@@ -18,6 +18,9 @@ interface FixtureLibraryProps {
   onFixtureClick: (fixture: Fixture) => void;
   onStartAreaSelection?: () => void;
   isSelectingArea?: boolean;
+  onStartFixtureDimension?: () => void;
+  onStartCenterLine?: () => void;
+  onStartTextAnnotation?: () => void;
 }
 
 export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
@@ -29,6 +32,9 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
   onFixtureClick,
   onStartAreaSelection,
   isSelectingArea,
+  onStartFixtureDimension,
+  onStartCenterLine,
+  onStartTextAnnotation,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPngImporter, setShowPngImporter] = useState(false);
@@ -100,6 +106,42 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
             </button>
           )}
         </div>
+
+        {/* Annotation Tools */}
+        {(onStartFixtureDimension || onStartCenterLine || onStartTextAnnotation) && (
+          <div className="annotation-tools-section">
+            <h4>Annotations</h4>
+            <div className="annotation-buttons">
+              {onStartFixtureDimension && (
+                <button
+                  onClick={onStartFixtureDimension}
+                  className="annotation-button"
+                  title="Measure distance between fixtures"
+                >
+                  Add Dimension
+                </button>
+              )}
+              {onStartCenterLine && (
+                <button
+                  onClick={onStartCenterLine}
+                  className="annotation-button"
+                  title="Draw center line between fixtures"
+                >
+                  Add Center Line
+                </button>
+              )}
+              {onStartTextAnnotation && (
+                <button
+                  onClick={onStartTextAnnotation}
+                  className="annotation-button"
+                  title="Add text note to floor plan"
+                >
+                  Add Text Note
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         <FixtureManager
           customFixtures={customFixtures}

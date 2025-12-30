@@ -2383,3 +2383,135 @@ body {
   opacity: 0.6;
   box-shadow: none;
 }
+
+/* Annotation Tools Section */
+.annotation-tools-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 0.5px solid var(--apple-gray-medium);
+}
+
+.annotation-tools-section h4 {
+  margin-bottom: 12px;
+  color: var(--apple-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.annotation-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.annotation-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--apple-blue);
+  color: var(--apple-white);
+  border: none;
+  border-radius: var(--apple-border-radius-small);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--apple-transition-duration) ease;
+  box-shadow: var(--apple-shadow);
+}
+
+.annotation-button:hover {
+  background: #0051D5;
+  transform: translateY(-1px);
+  box-shadow: var(--apple-shadow-hover);
+}
+
+/* Fixture Dimension Tool */
+.fixture-dimension-tool,
+.center-line-tool,
+.text-annotation-tool {
+  background: var(--apple-white);
+  padding: 20px;
+  border-radius: var(--apple-border-radius);
+  box-shadow: var(--apple-shadow);
+  margin-bottom: 16px;
+}
+
+.tool-header h3 {
+  margin-bottom: 8px;
+  color: var(--apple-text-primary);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.tool-header p {
+  color: var(--apple-text-secondary);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.dimension-preview {
+  background: var(--apple-gray-light);
+  padding: 12px;
+  border-radius: var(--apple-border-radius-small);
+  margin-bottom: 16px;
+}
+
+.dimension-preview p {
+  margin: 0 0 8px 0;
+  color: var(--apple-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dimension-label-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 0.5px solid var(--apple-gray-medium);
+  border-radius: var(--apple-border-radius-small);
+  font-size: 13px;
+  background: var(--apple-white);
+  color: var(--apple-text-primary);
+}
+
+.dimension-label-input:focus {
+  outline: none;
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.tool-instructions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 0.5px solid var(--apple-gray-medium);
+}
+
+.tool-instructions p {
+  margin: 4px 0;
+  color: var(--apple-text-secondary);
+  font-size: 12px;
+}
+
+.tool-instructions .highlight-text {
+  color: var(--apple-blue);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.annotation-input {
+  margin: 16px 0;
+}
+
+.text-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--apple-blue);
+  border-radius: var(--apple-border-radius-small);
+  font-size: 14px;
+  background: var(--apple-white);
+  color: var(--apple-text-primary);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}

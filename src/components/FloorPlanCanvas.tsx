@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { PlacedFixture, ScaleInfo, Position, DimensionLine, PlacementArea } from '../types';
+import { PlacedFixture, ScaleInfo, Position, DimensionLine, PlacementArea, FixtureDimensionLine, CenterLine, TextAnnotation } from '../types';
 import { checkFit } from '../utils/scaleUtils';
 
 interface FloorPlanCanvasProps {
@@ -7,6 +7,9 @@ interface FloorPlanCanvasProps {
   scaleInfo: ScaleInfo | null;
   dimensionLines: DimensionLine[];
   fixtures: PlacedFixture[];
+  fixtureDimensionLines?: FixtureDimensionLine[];
+  centerLines?: CenterLine[];
+  textAnnotations?: TextAnnotation[];
   onFixtureMove: (id: string, position: Position) => void;
   onFixtureRotate: (id: string, angle: number) => void;
   onFixtureDelete: (id: string) => void;
@@ -14,6 +17,9 @@ interface FloorPlanCanvasProps {
   onFixtureRotateComplete?: () => void;
   placementArea?: PlacementArea | null;
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
+  isAddingFixtureDimension?: boolean;
+  isAddingCenterLine?: boolean;
+  onFixtureClick?: (fixtureId: string) => void;
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
@@ -21,6 +27,9 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   scaleInfo,
   dimensionLines,
   fixtures,
+  fixtureDimensionLines = [],
+  centerLines = [],
+  textAnnotations = [],
   onFixtureMove,
   onFixtureRotate,
   onFixtureDelete,
@@ -28,6 +37,9 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onFixtureRotateComplete,
   placementArea,
   onDisplayedImageSizeChange,
+  isAddingFixtureDimension = false,
+  isAddingCenterLine = false,
+  onFixtureClick,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -518,7 +530,24 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 transformOrigin: 'center center',
                 willChange: draggedFixture?.id === fixture.id ? 'transform' : 'auto', // Optimize for dragging
               }}
-              onMouseDown={(e) => handleFixtureMouseDown(fixture, e, false)}
+              onMouseDown={(e) => {
+                // If in annotation mode, handle click for annotation selection
+                if ((isAddingFixtureDimension || isAddingCenterLine) && onFixtureClick) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onFixtureClick(fixture.id);
+                  return;
+                }
+                // Otherwise, handle normal fixture interaction
+                handleFixtureMouseDown(fixture, e, false);
+              }}
+              onClick={(e) => {
+                // Handle click for annotation mode (separate from mouseDown to avoid conflicts)
+                if ((isAddingFixtureDimension || isAddingCenterLine) && onFixtureClick) {
+                  e.stopPropagation();
+                  onFixtureClick(fixture.id);
+                }
+              }}
               onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -643,6 +672,149 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
             </div>
           );
         })}
+
+        {/* Render fixture dimension lines */}
+        {fixtureDimensionLines.length > 0 && displayedImageSize && scaleInfo && (
+          <svg
+            className="fixture-dimension-lines-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: displayedImageSize.width,
+              height: displayedImageSize.height,
+              pointerEvents: 'none',
+            }}
+          >
+            {fixtureDimensionLines.map((dim) => {
+              const scaleX = displayedImageSize.width / dim.imageWidth;
+              const scaleY = displayedImageSize.height / dim.imageHeight;
+              
+              const scaledStartX = dim.startPosition.x * scaleX;
+              const scaledStartY = dim.startPosition.y * scaleY;
+              const scaledEndX = dim.endPosition.x * scaleX;
+              const scaledEndY = dim.endPosition.y * scaleY;
+              
+              const midX = (scaledStartX + scaledEndX) / 2;
+              const midY = (scaledStartY + scaledEndY) / 2;
+              const angle = Math.atan2(
+                scaledEndY - scaledStartY,
+                scaledEndX - scaledStartX
+              ) * 180 / Math.PI;
+
+              return (
+                <g key={dim.id}>
+                  <line
+                    x1={scaledStartX}
+                    y1={scaledStartY}
+                    x2={scaledEndX}
+                    y2={scaledEndY}
+                    stroke="#007AFF"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                  />
+                  <circle
+                    cx={scaledStartX}
+                    cy={scaledStartY}
+                    r="4"
+                    fill="#007AFF"
+                  />
+                  <circle
+                    cx={scaledEndX}
+                    cy={scaledEndY}
+                    r="4"
+                    fill="#007AFF"
+                  />
+                  <text
+                    x={midX}
+                    y={midY - 10}
+                    fill="#007AFF"
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    transform={`rotate(${angle} ${midX} ${midY})`}
+                  >
+                    {dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        )}
+
+        {/* Render center lines */}
+        {centerLines.length > 0 && displayedImageSize && scaleInfo && (
+          <svg
+            className="center-lines-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: displayedImageSize.width,
+              height: displayedImageSize.height,
+              pointerEvents: 'none',
+            }}
+          >
+            {centerLines.map((line) => {
+              const scaleX = displayedImageSize.width / line.imageWidth;
+              const scaleY = displayedImageSize.height / line.imageHeight;
+              
+              const scaledStartX = line.start.x * scaleX;
+              const scaledStartY = line.start.y * scaleY;
+              const scaledEndX = line.end.x * scaleX;
+              const scaledEndY = line.end.y * scaleY;
+
+              return (
+                <line
+                  key={line.id}
+                  x1={scaledStartX}
+                  y1={scaledStartY}
+                  x2={scaledEndX}
+                  y2={scaledEndY}
+                  stroke="#8E8E93"
+                  strokeWidth="2"
+                  strokeDasharray="8,4"
+                  opacity="0.6"
+                />
+              );
+            })}
+          </svg>
+        )}
+
+        {/* Render text annotations */}
+        {textAnnotations.length > 0 && displayedImageSize && scaleInfo && (
+          <div className="text-annotations-overlay" style={{ position: 'absolute', top: 0, left: 0, width: displayedImageSize.width, height: displayedImageSize.height, pointerEvents: 'none' }}>
+            {textAnnotations.map((annotation) => {
+              const scaleX = displayedImageSize.width / annotation.imageWidth;
+              const scaleY = displayedImageSize.height / annotation.imageHeight;
+              
+              const scaledX = annotation.position.x * scaleX;
+              const scaledY = annotation.position.y * scaleY;
+
+              return (
+                <div
+                  key={annotation.id}
+                  style={{
+                    position: 'absolute',
+                    left: scaledX,
+                    top: scaledY,
+                    padding: '6px 10px',
+                    backgroundColor: annotation.backgroundColor || 'rgba(255, 255, 255, 0.95)',
+                    color: annotation.color || '#000',
+                    fontSize: annotation.fontSize || '13px',
+                    borderRadius: 'var(--apple-border-radius-small)',
+                    boxShadow: 'var(--apple-shadow)',
+                    border: '1px solid var(--apple-gray-medium)',
+                    whiteSpace: 'nowrap',
+                    transform: `translate(-50%, -50%) rotate(${annotation.rotation || 0}deg)`,
+                  }}
+                >
+                  {annotation.text}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
