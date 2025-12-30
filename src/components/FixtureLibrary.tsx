@@ -35,7 +35,6 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
   const {
     groups,
     createGroup,
-    updateGroup,
     deleteGroup,
   } = useGroups();
 
@@ -85,13 +84,6 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
           )}
         </div>
 
-        <GroupManager
-          groups={groups}
-          onCreateGroup={createGroup}
-          onUpdateGroup={updateGroup}
-          onDeleteGroup={handleDeleteGroup}
-        />
-
         <FixtureManager
           customFixtures={customFixtures}
           onUpdate={onUpdateFixture}
@@ -99,6 +91,12 @@ export const FixtureLibrary: React.FC<FixtureLibraryProps> = ({
           onFixtureClick={onFixtureClick}
           groups={groups}
           onCreateGroup={createGroup}
+        />
+
+        <GroupManager
+          groups={groups}
+          onCreateGroup={createGroup}
+          onDeleteGroup={handleDeleteGroup}
         />
       </div>
 

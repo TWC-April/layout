@@ -4,20 +4,16 @@ import { Group } from '../hooks/useGroups';
 interface GroupManagerProps {
   groups: Group[];
   onCreateGroup: (name: string) => void;
-  onUpdateGroup: (id: string, newName: string) => void;
   onDeleteGroup: (id: string) => void;
 }
 
 export const GroupManager: React.FC<GroupManagerProps> = ({
   groups,
   onCreateGroup,
-  onUpdateGroup,
   onDeleteGroup,
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
 
   const handleCreateGroup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,24 +22,6 @@ export const GroupManager: React.FC<GroupManagerProps> = ({
       setNewGroupName('');
       setShowCreateForm(false);
     }
-  };
-
-  const startEdit = (group: Group) => {
-    setEditingGroupId(group.id);
-    setEditingName(group.name);
-  };
-
-  const saveEdit = (groupId: string) => {
-    if (editingName.trim()) {
-      onUpdateGroup(groupId, editingName.trim());
-    }
-    setEditingGroupId(null);
-    setEditingName('');
-  };
-
-  const cancelEdit = () => {
-    setEditingGroupId(null);
-    setEditingName('');
   };
 
   return (
@@ -92,54 +70,23 @@ export const GroupManager: React.FC<GroupManagerProps> = ({
         ) : (
           groups.map((group) => (
             <div key={group.id} className="group-item">
-              {editingGroupId === group.id ? (
-                <div className="group-edit-form">
-                  <input
-                    type="text"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onBlur={() => saveEdit(group.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        saveEdit(group.id);
-                      } else if (e.key === 'Escape') {
-                        cancelEdit();
-                      }
-                    }}
-                    autoFocus
-                    className="group-name-input"
-                  />
-                </div>
-              ) : (
-                <>
-                  <span className="group-name">{group.name}</span>
-                  <div className="group-actions">
-                    <button
-                      onClick={() => startEdit(group)}
-                      className="edit-group-button"
-                      title="Rename Group"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M10.5 1.5L12.5 3.5L4.5 11.5H2.5V9.5L10.5 1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Delete group "${group.name}"? Fixtures in this group will become ungrouped.`)) {
-                          onDeleteGroup(group.id);
-                        }
-                      }}
-                      className="delete-group-button"
-                      title="Delete Group"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3.5 3.5H10.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M2.5 3.5H11.5L11 11.5C11 12.0523 10.5523 12.5 10 12.5H4C3.44772 12.5 3 12.0523 3 11.5L2.5 3.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M5.5 6V10.5M8.5 6V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </>
-              )}
+              <span className="group-name">{group.name}</span>
+              <div className="group-actions">
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete group "${group.name}"? Fixtures in this group will become ungrouped.`)) {
+                      onDeleteGroup(group.id);
+                    }
+                  }}
+                  className="delete-group-button"
+                  title="Delete Group"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3.5 3.5H10.5M5.5 3.5V2.5C5.5 2.22386 5.72386 2 6 2H8C8.27614 2 8.5 2.22386 8.5 2.5V3.5M2.5 3.5H11.5L11 11.5C11 12.0523 10.5523 12.5 10 12.5H4C3.44772 12.5 3 12.0523 3 11.5L2.5 3.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5.5 6V10.5M8.5 6V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           ))
         )}
