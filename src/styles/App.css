@@ -2116,13 +2116,15 @@ body {
 .reset-area-button,
 .cancel-area-button {
   flex: 1;
-  padding: 10px 16px;
+  padding: 12px 20px;
   border: none;
   border-radius: var(--apple-border-radius-small);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   transition: all var(--apple-transition-duration) ease;
+  opacity: 1;
+  display: block;
 }
 
 .confirm-area-button {
@@ -2306,13 +2308,15 @@ body {
 .confirm-placement-button,
 .cancel-placement-button {
   flex: 1;
-  padding: 10px 16px;
+  padding: 12px 20px;
   border: none;
   border-radius: var(--apple-border-radius-small);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   transition: all var(--apple-transition-duration) ease;
+  opacity: 1;
+  display: block;
 }
 
 .confirm-placement-button {
@@ -2352,17 +2356,19 @@ body {
 
 .select-area-button {
   width: 100%;
-  padding: 10px 16px;
+  padding: 12px 20px;
   background: var(--apple-green);
   color: var(--apple-white);
   border: none;
   border-radius: var(--apple-border-radius-small);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   transition: all var(--apple-transition-duration) var(--apple-transition-ease);
   box-shadow: var(--apple-shadow);
-  margin-top: 8px;
+  margin-top: 12px;
+  opacity: 1;
+  display: block;
 }
 
 .select-area-button:hover:not(:disabled) {
