@@ -109,13 +109,15 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       }, 50);
     } else if (endPos && fixedDistance !== null && isAdjustingSecondPoint) {
       // User is clicking to lock the second point position
+      // Position is already in displayed pixels, convert to calibration pixels
       const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
       const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
-      const startDisplayPos = { x: startPos.x * scaleX, y: startPos.y * scaleY };
+      const calibrationX = position.x / scaleX;
+      const calibrationY = position.y / scaleY;
       
-      // Calculate angle from start to click position
-      const dx = position.x - startDisplayPos.x;
-      const dy = position.y - startDisplayPos.y;
+      // Calculate angle from start to click position in calibration coordinates
+      const dx = calibrationX - startPos.x;
+      const dy = calibrationY - startPos.y;
       const angle = Math.atan2(dy, dx);
       
       // Apply 90-degree constraint if Shift is pressed
@@ -126,12 +128,14 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
         finalAngle = (roundedDegrees * Math.PI) / 180;
       }
       
-      // Calculate final end position at fixed distance
+      // Calculate final end position at fixed distance (in calibration pixels)
       const newEndPos: Position = {
         x: startPos.x + Math.cos(finalAngle) * fixedDistance,
         y: startPos.y + Math.sin(finalAngle) * fixedDistance,
       };
       
+      // Calculate display position for preview
+      const startDisplayPos = { x: startPos.x * scaleX, y: startPos.y * scaleY };
       const newEndDisplayPos = {
         x: startDisplayPos.x + Math.cos(finalAngle) * fixedDistance * scaleX,
         y: startDisplayPos.y + Math.sin(finalAngle) * fixedDistance * scaleY,
