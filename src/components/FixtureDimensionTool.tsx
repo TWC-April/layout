@@ -351,11 +351,10 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
               value={dimensionInput}
               autoFocus={startPos !== null && !endPos}
               onChange={(e) => {
-                setDimensionInput(e.target.value);
-                const dim = parseFloat(e.target.value);
-                if (!isNaN(dim) && dim > 0) {
-                  handleDimensionInput(dim);
-                }
+                const value = e.target.value;
+                setDimensionInput(value);
+                // Only process dimension when user finishes typing (on blur or Enter)
+                // Don't process on every keystroke to allow multi-digit input
               }}
               onKeyDown={(e) => {
                 // Allow Enter key to confirm dimension input
@@ -372,7 +371,13 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
               onFocus={() => {
                 // Stop mouse move updates when input is focused
               }}
-              onBlur={() => {
+              onBlur={(e) => {
+                // Process dimension input when user leaves the field
+                const value = e.target.value;
+                const dim = parseFloat(value);
+                if (!isNaN(dim) && dim > 0) {
+                  handleDimensionInput(dim);
+                }
                 // Resume mouse move updates when input loses focus
               }}
               placeholder="Type dimension (e.g., 1000)"
