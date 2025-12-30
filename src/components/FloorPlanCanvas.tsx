@@ -855,7 +855,22 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               ) * 180 / Math.PI;
 
               return (
-                <g key={dim.id}>
+                <g 
+                  key={dim.id}
+                  className="dimension-line-group"
+                  onMouseEnter={(e) => {
+                    const deleteBtn = e.currentTarget.querySelector('.dimension-delete-button') as SVGGraphicsElement;
+                    if (deleteBtn) {
+                      deleteBtn.style.opacity = '1';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const deleteBtn = e.currentTarget.querySelector('.dimension-delete-button') as SVGGraphicsElement;
+                    if (deleteBtn) {
+                      deleteBtn.style.opacity = '0';
+                    }
+                  }}
+                >
                   <line
                     x1={scaledStartX}
                     y1={scaledStartY}
@@ -938,14 +953,14 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   >
                     {dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`}
                   </text>
-                  {/* Delete button - appears on hover */}
+                  {/* Delete button - only appears on hover */}
                   {onDimensionLineDelete && (
                     <g
                       className="dimension-delete-button"
                       style={{
                         pointerEvents: 'auto',
                         cursor: 'pointer',
-                        opacity: 0.6,
+                        opacity: 0,
                         transition: 'opacity 0.2s ease',
                       }}
                       onClick={(e) => {
@@ -953,12 +968,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                         if (window.confirm('Delete this dimension line?')) {
                           onDimensionLineDelete(dim.id);
                         }
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = '1';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = '0.6';
                       }}
                     >
                       <circle
@@ -969,18 +978,15 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                         stroke="white"
                         strokeWidth="1.5"
                       />
-                      <text
-                        x={scaledEndX + 15}
-                        y={scaledEndY - 15}
-                        fill="white"
-                        fontSize="10"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        pointerEvents="none"
-                      >
-                        ×
-                      </text>
+                      <line 
+                        x1={scaledEndX + 11} 
+                        y1={scaledEndY - 15} 
+                        x2={scaledEndX + 19} 
+                        y2={scaledEndY - 15} 
+                        stroke="white" 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                      />
                     </g>
                   )}
                 </g>
