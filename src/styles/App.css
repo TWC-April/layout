@@ -426,6 +426,8 @@ body {
 
 .fixture-library-header h3 {
   margin-bottom: 0;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .header-buttons {
@@ -2394,7 +2396,7 @@ body {
 .annotation-tools-section h4 {
   margin-bottom: 12px;
   color: var(--apple-text-primary);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
 }
 
