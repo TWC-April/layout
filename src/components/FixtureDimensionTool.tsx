@@ -123,7 +123,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
 
   // Handle dimension input mode - calculate second point from dimension
   const handleDimensionInput = useCallback((dimension: number) => {
-    if (!startPos || endPos) return; // Need startPos but not endPos yet
+    if (!startPos) return; // Need startPos
+    if (endPos) return; // Already have endPos, don't recalculate
     
     // Calculate direction from start to current position
     const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
