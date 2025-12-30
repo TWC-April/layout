@@ -96,6 +96,12 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       setDimensionInput('');
       setFixedDistance(null);
       setIsAdjustingSecondPoint(false);
+      // Auto-focus the input field after a short delay to allow state to update
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 50);
     } else if (endPos && fixedDistance !== null && isAdjustingSecondPoint) {
       // User is adjusting the second point - update it
       const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
@@ -336,13 +342,14 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
       {startPos && !endPos && (
         <div className="dimension-input-section">
           <label>
-            Or enter dimension (mm) to calculate second point:
+            Enter dimension (mm) to calculate second point:
             <input
               ref={inputRef}
               type="number"
               step="0.1"
               min="0.1"
               value={dimensionInput}
+              autoFocus={startPos !== null && !endPos}
               onChange={(e) => {
                 setDimensionInput(e.target.value);
                 const dim = parseFloat(e.target.value);
@@ -359,6 +366,8 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
                     e.preventDefault();
                   }
                 }
+                // Prevent mouse move updates when typing
+                e.stopPropagation();
               }}
               onFocus={() => {
                 // Stop mouse move updates when input is focused
@@ -366,7 +375,7 @@ export const FixtureDimensionTool = forwardRef<FixtureDimensionToolHandle, Fixtu
               onBlur={() => {
                 // Resume mouse move updates when input loses focus
               }}
-              placeholder="e.g., 1000"
+              placeholder="Type dimension (e.g., 1000)"
               className="dimension-label-input"
             />
           </label>
