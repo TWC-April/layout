@@ -543,6 +543,37 @@ function App() {
     }
   }, [state.isAddingFixtureDimension, state.isAddingCenterLine]);
 
+  const handleFloorPlanMouseMove = useCallback((position: Position) => {
+    if (state.isAddingFixtureDimension && dimensionToolRef.current) {
+      dimensionToolRef.current.handleFloorPlanMouseMove(position);
+    }
+  }, [state.isAddingFixtureDimension]);
+
+  const [dimensionPreviewState, setDimensionPreviewState] = useState<{
+    startPos: Position | null;
+    currentPos: Position | null;
+    endPos: Position | null;
+    isShiftPressed: boolean;
+  } | null>(null);
+
+  // Update preview state from dimension tool
+  useEffect(() => {
+    if (state.isAddingFixtureDimension && dimensionToolRef.current) {
+      const updatePreview = () => {
+        const previewState = dimensionToolRef.current?.getPreviewState();
+        if (previewState) {
+          setDimensionPreviewState(previewState);
+        }
+      };
+      // Update more frequently for smooth preview
+      const interval = setInterval(updatePreview, 16); // ~60fps
+      updatePreview(); // Initial update
+      return () => clearInterval(interval);
+    } else {
+      setDimensionPreviewState(null);
+    }
+  }, [state.isAddingFixtureDimension]);
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
@@ -738,6 +769,8 @@ function App() {
                     isAddingFixtureDimension={state.isAddingFixtureDimension}
                     isAddingCenterLine={state.isAddingCenterLine}
                     onFloorPlanClick={handleFloorPlanClick}
+                    onFloorPlanMouseMove={handleFloorPlanMouseMove}
+                    dimensionPreviewState={dimensionPreviewState || undefined}
                   />
                 ) : (
                   <div className="empty-state">

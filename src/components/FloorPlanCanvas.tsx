@@ -20,6 +20,13 @@ interface FloorPlanCanvasProps {
   isAddingFixtureDimension?: boolean;
   isAddingCenterLine?: boolean;
   onFloorPlanClick?: (position: Position) => void;
+  onFloorPlanMouseMove?: (position: Position) => void;
+  dimensionPreviewState?: {
+    startPos: Position | null;
+    currentPos: Position | null;
+    endPos: Position | null;
+    isShiftPressed: boolean;
+  };
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
@@ -40,6 +47,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   isAddingFixtureDimension = false,
   isAddingCenterLine = false,
   onFloorPlanClick,
+  onFloorPlanMouseMove,
+  dimensionPreviewState,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -406,6 +415,18 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               onFloorPlanClick({ x: zoomX, y: zoomY });
             }
           }}
+          onMouseMove={(e) => {
+            // Handle mouse move for dimension preview
+            if (isAddingFixtureDimension && onFloorPlanMouseMove && displayedImageSize && scaleInfo) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              // Account for zoom
+              const zoomX = x / zoomLevel;
+              const zoomY = y / zoomLevel;
+              onFloorPlanMouseMove({ x: zoomX, y: zoomY });
+            }
+          }}
           style={{
             cursor: (isAddingFixtureDimension || isAddingCenterLine) ? 'crosshair' : 'default',
           }}
@@ -698,6 +719,75 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
             </div>
           );
         })}
+
+        {/* Render dimension preview line */}
+        {isAddingFixtureDimension && dimensionPreviewState && displayedImageSize && scaleInfo && (
+          <svg
+            className="dimension-preview-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: displayedImageSize.width,
+              height: displayedImageSize.height,
+              pointerEvents: 'none',
+              zIndex: 1000,
+            }}
+          >
+            {dimensionPreviewState.startPos && dimensionPreviewState.currentPos && (
+              <>
+                <line
+                  x1={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
+                  y1={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                  x2={dimensionPreviewState.currentPos.x}
+                  y2={dimensionPreviewState.currentPos.y}
+                  stroke={dimensionPreviewState.endPos ? "#007AFF" : "#ff4444"}
+                  strokeWidth="2"
+                  strokeDasharray={dimensionPreviewState.endPos ? "0" : "5,5"}
+                />
+                <circle
+                  cx={dimensionPreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
+                  cy={dimensionPreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                  r="4"
+                  fill="#ff4444"
+                />
+                <circle
+                  cx={dimensionPreviewState.currentPos.x}
+                  cy={dimensionPreviewState.currentPos.y}
+                  r="4"
+                  fill={dimensionPreviewState.endPos ? "#007AFF" : "#ff4444"}
+                />
+                {dimensionPreviewState.endPos && (() => {
+                  const startX = dimensionPreviewState.startPos!.x * (displayedImageSize.width / scaleInfo.imageWidth);
+                  const startY = dimensionPreviewState.startPos!.y * (displayedImageSize.height / scaleInfo.imageHeight);
+                  const endX = dimensionPreviewState.currentPos!.x;
+                  const endY = dimensionPreviewState.currentPos!.y;
+                  const midX = (startX + endX) / 2;
+                  const midY = (startY + endY) / 2;
+                  const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                  const dx = dimensionPreviewState.endPos.x - dimensionPreviewState.startPos!.x;
+                  const dy = dimensionPreviewState.endPos.y - dimensionPreviewState.startPos!.y;
+                  const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+                  const realLength = pixelDistance / scaleInfo.pixelsPerMillimeter;
+                  
+                  return (
+                    <text
+                      x={midX}
+                      y={midY - 10}
+                      fill="#007AFF"
+                      fontSize="12"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      transform={`rotate(${angle} ${midX} ${midY})`}
+                    >
+                      {Math.round(realLength).toLocaleString()} mm
+                    </text>
+                  );
+                })()}
+              </>
+            )}
+          </svg>
+        )}
 
         {/* Render fixture dimension lines */}
         {fixtureDimensionLines.length > 0 && displayedImageSize && scaleInfo && (
