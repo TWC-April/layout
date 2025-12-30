@@ -896,18 +896,27 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   >
                     {dim.label || `${Math.round(dim.realLength).toLocaleString()} mm`}
                   </text>
-                  {/* Delete button */}
+                  {/* Delete button - appears on hover */}
                   {onDimensionLineDelete && (
                     <g
+                      className="dimension-delete-button"
                       style={{
                         pointerEvents: 'auto',
                         cursor: 'pointer',
+                        opacity: 0.6,
+                        transition: 'opacity 0.2s ease',
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (window.confirm('Delete this dimension line?')) {
                           onDimensionLineDelete(dim.id);
                         }
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '0.6';
                       }}
                     >
                       <circle
@@ -926,6 +935,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                         fontWeight="bold"
                         textAnchor="middle"
                         dominantBaseline="central"
+                        pointerEvents="none"
                       >
                         ×
                       </text>
