@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScaleInfo, DimensionLine } from '../types';
-import { calculateScaleFromLines, calculateSeparateScales } from '../utils/scaleUtils';
+import { calculateScaleFromLines, calculateSeparateScales, validateDimensionLines } from '../utils/scaleUtils';
 
 interface ScaleCalibrationProps {
   imageWidth: number;
@@ -17,6 +17,7 @@ export const ScaleCalibration: React.FC<ScaleCalibrationProps> = ({
 }) => {
   const pixelsPerMillimeter = calculateScaleFromLines(dimensionLines);
   const separateScales = calculateSeparateScales(dimensionLines);
+  const validation = validateDimensionLines(dimensionLines);
 
   React.useEffect(() => {
     if (pixelsPerMillimeter && dimensionLines.length > 0) {
@@ -95,11 +96,55 @@ export const ScaleCalibration: React.FC<ScaleCalibrationProps> = ({
           </div>
         )}
 
+        {/* Validation warning for inconsistent lines */}
+        {dimensionLines.length >= 2 && !validation.isValid && validation.inconsistentLineIndex !== null && (
+          <div 
+            className="validation-warning"
+            style={{
+              marginTop: '10px',
+              padding: '10px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+              color: '#856404',
+            }}
+          >
+            <p style={{ margin: 0, fontWeight: 'bold' }}>
+              ⚠️ Warning: Inconsistent Reference Line
+            </p>
+            <p style={{ margin: '5px 0 0 0', fontSize: '0.9em' }}>
+              {validation.message}
+            </p>
+            <p style={{ margin: '5px 0 0 0', fontSize: '0.85em', fontStyle: 'italic' }}>
+              Please verify the dimension value for Line {validation.inconsistentLineIndex + 1} or redraw it.
+            </p>
+          </div>
+        )}
+
+        {/* Success message for consistent lines */}
+        {dimensionLines.length >= 2 && validation.isValid && validation.message && (
+          <div 
+            className="validation-success"
+            style={{
+              marginTop: '10px',
+              padding: '10px',
+              backgroundColor: '#d4edda',
+              border: '1px solid #28a745',
+              borderRadius: '4px',
+              color: '#155724',
+            }}
+          >
+            <p style={{ margin: 0, fontSize: '0.9em' }}>
+              ✓ {validation.message}
+            </p>
+          </div>
+        )}
+
         {/* Hints */}
         <div className="calibration-hints">
           {dimensionLines.length === 1 ? (
             <p className="hint">
-              💡 Draw horizontal and vertical lines to verify scale accuracy
+              💡 Draw a second reference line to verify scale accuracy
             </p>
           ) : separateScales.scaleX === null ? (
             <p className="hint">

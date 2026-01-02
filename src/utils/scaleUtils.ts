@@ -106,3 +106,91 @@ export function calculateLineLength(start: Position, end: Position): number {
   );
 }
 
+/**
+ * Validates if dimension lines are consistent with each other.
+ * When there are exactly 2 lines, checks if one is significantly different from the other.
+ * Returns information about which line (if any) appears to be incorrect.
+ */
+export function validateDimensionLines(
+  dimensionLines: DimensionLine[]
+): {
+  isValid: boolean;
+  inconsistentLineIndex: number | null;
+  mismatchPercent: number | null;
+  message: string | null;
+} {
+  if (dimensionLines.length < 2) {
+    return {
+      isValid: true,
+      inconsistentLineIndex: null,
+      mismatchPercent: null,
+      message: null,
+    };
+  }
+
+  // Calculate scale for each line
+  const lineScales = dimensionLines.map((line) => {
+    const pixelLength = Math.sqrt(
+      Math.pow(line.end.x - line.start.x, 2) +
+      Math.pow(line.end.y - line.start.y, 2)
+    );
+    return pixelLength / line.realLength;
+  });
+
+  // If exactly 2 lines, check if one is inconsistent
+  if (dimensionLines.length === 2) {
+    const scale1 = lineScales[0];
+    const scale2 = lineScales[1];
+    const avgScale = (scale1 + scale2) / 2;
+    const diff = Math.abs(scale1 - scale2);
+    const mismatchPercent = (diff / avgScale) * 100;
+
+    // Threshold: if difference is more than 5%, flag as inconsistent
+    if (mismatchPercent > 5) {
+      // Determine which line is more likely incorrect
+      // The one that deviates more from the average
+      const dev1 = Math.abs(scale1 - avgScale);
+      const dev2 = Math.abs(scale2 - avgScale);
+      const inconsistentIndex = dev1 > dev2 ? 0 : 1;
+
+      return {
+        isValid: false,
+        inconsistentLineIndex: inconsistentIndex,
+        mismatchPercent,
+        message: `Line ${inconsistentIndex + 1} appears to be incorrect (${mismatchPercent.toFixed(1)}% difference)`,
+      };
+    }
+
+    return {
+      isValid: true,
+      inconsistentLineIndex: null,
+      mismatchPercent,
+      message: mismatchPercent > 1 ? `Lines are consistent (${mismatchPercent.toFixed(1)}% difference)` : 'Lines are consistent',
+    };
+  }
+
+  // For more than 2 lines, check each line against the average
+  const avgScale = lineScales.reduce((sum, s) => sum + s, 0) / lineScales.length;
+  const deviations = lineScales.map((scale) => Math.abs(scale - avgScale));
+  const maxDeviation = Math.max(...deviations);
+  const maxDeviationIndex = deviations.indexOf(maxDeviation);
+  const maxMismatchPercent = (maxDeviation / avgScale) * 100;
+
+  // If any line deviates more than 10% from average, flag it
+  if (maxMismatchPercent > 10) {
+    return {
+      isValid: false,
+      inconsistentLineIndex: maxDeviationIndex,
+      mismatchPercent: maxMismatchPercent,
+      message: `Line ${maxDeviationIndex + 1} appears to be incorrect (${maxMismatchPercent.toFixed(1)}% deviation from average)`,
+    };
+  }
+
+  return {
+    isValid: true,
+    inconsistentLineIndex: null,
+    mismatchPercent: maxMismatchPercent,
+    message: maxMismatchPercent > 1 ? `All lines are consistent (max ${maxMismatchPercent.toFixed(1)}% deviation)` : 'All lines are consistent',
+  };
+}
+
