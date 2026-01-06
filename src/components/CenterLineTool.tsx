@@ -1,4 +1,4 @@
-import { useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { useState, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { ScaleInfo, CenterLine, Position } from '../types';
 import { pixelsToRealUnits, calculateLineLength } from '../utils/scaleUtils';
 
@@ -29,6 +29,46 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
   const [startPos, setStartPos] = useState<Position | null>(null);
   const [endPos, setEndPos] = useState<Position | null>(null);
   const [currentPos, setCurrentPos] = useState<Position | null>(null);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+  // Handle Shift key for straight line constraint
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' && !e.repeat) {
+        setIsShiftPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const constrainToStraightLine = useCallback((start: Position, current: Position): Position => {
+    if (!isShiftPressed) return current;
+    
+    const dx = Math.abs(current.x - start.x);
+    const dy = Math.abs(current.y - start.y);
+    
+    // Constrain to the direction that's closer to the mouse
+    if (dx > dy) {
+      // Horizontal line - keep Y the same as start
+      return { x: current.x, y: start.y };
+    } else {
+      // Vertical line - keep X the same as start
+      return { x: start.x, y: current.y };
+    }
+  }, [isShiftPressed]);
 
   const handleFloorPlanClick = useCallback((position: Position) => {
     // Convert from displayed pixels to calibration pixels
@@ -37,7 +77,7 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
     const calibrationX = position.x / scaleX;
     const calibrationY = position.y / scaleY;
 
-    const calibrationPos: Position = { x: calibrationX, y: calibrationY };
+    let calibrationPos: Position = { x: calibrationX, y: calibrationY };
 
     if (!startPos) {
       // First click: Set start position
@@ -46,8 +86,20 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
       setEndPos(null);
     } else if (!endPos) {
       // Second click: Set end position and automatically create center line
+      // Apply Shift constraint if pressed
+      if (isShiftPressed) {
+        const constrainedPos = constrainToStraightLine(startPos, calibrationPos);
+        calibrationPos = constrainedPos;
+        // Update displayed position to match constrained calibration position
+        const constrainedDisplayPos = {
+          x: constrainedPos.x * scaleX,
+          y: constrainedPos.y * scaleY,
+        };
+        setCurrentPos(constrainedDisplayPos);
+      } else {
+        setCurrentPos(position);
+      }
       setEndPos(calibrationPos);
-      setCurrentPos(position);
       
       // Calculate midpoint
       const midX = (startPos.x + calibrationPos.x) / 2;
@@ -88,13 +140,30 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
       setEndPos(null);
       setCurrentPos(null);
     }
-  }, [startPos, endPos, scaleInfo, displayedImageSize, onCenterLineComplete]);
+  }, [startPos, endPos, isShiftPressed, scaleInfo, displayedImageSize, onCenterLineComplete, constrainToStraightLine]);
 
   const handleFloorPlanMouseMove = useCallback((position: Position) => {
     if (!startPos || endPos) return; // Only show preview before second click
     
-    setCurrentPos(position);
-  }, [startPos, endPos]);
+    // Convert from displayed pixels to calibration pixels for constraint calculation
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    const calibrationX = position.x / scaleX;
+    const calibrationY = position.y / scaleY;
+    const calibrationPos: Position = { x: calibrationX, y: calibrationY };
+    
+    // Apply Shift constraint if pressed
+    if (isShiftPressed && startPos) {
+      const constrainedPos = constrainToStraightLine(startPos, calibrationPos);
+      const constrainedDisplayPos = {
+        x: constrainedPos.x * scaleX,
+        y: constrainedPos.y * scaleY,
+      };
+      setCurrentPos(constrainedDisplayPos);
+    } else {
+      setCurrentPos(position);
+    }
+  }, [startPos, endPos, isShiftPressed, scaleInfo, displayedImageSize, constrainToStraightLine]);
 
   // Expose handlers via ref
   useImperativeHandle(ref, () => ({
@@ -121,7 +190,7 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
           {!startPos 
             ? 'Click on the floor plan to set the first point'
             : !endPos
-            ? 'Click on the floor plan to set the second point (center line will be created automatically)'
+            ? `Click on the floor plan to set the second point (center line will be created automatically)${isShiftPressed ? ' • Hold Shift for straight line' : ''}`
             : 'Center line created'}
         </p>
       </div>

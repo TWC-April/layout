@@ -1238,7 +1238,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     x={leftLabelX}
                     y={leftLabelY}
                     fill="#007AFF"
-                    fontSize="12"
+                    fontSize="7"
                     fontWeight="bold"
                     textAnchor="middle"
                     dominantBaseline="central"
@@ -1249,13 +1249,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   
                   {/* Center label background (CL) */}
                   <rect
-                    x={centerLabelX - 15}
-                    y={centerLabelY - 10}
-                    width="30"
-                    height="20"
+                    x={centerLabelX - 10}
+                    y={centerLabelY - 6}
+                    width="20"
+                    height="12"
                     fill="white"
                     fillOpacity="0.8"
-                    rx="4"
+                    rx="3"
                   />
                   
                   {/* Center label text (CL) */}
@@ -1263,7 +1263,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     x={centerLabelX}
                     y={centerLabelY}
                     fill="#007AFF"
-                    fontSize="12"
+                    fontSize="7"
                     fontWeight="bold"
                     textAnchor="middle"
                     dominantBaseline="central"
@@ -1274,13 +1274,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   
                   {/* Right dimension label background */}
                   <rect
-                    x={rightLabelX - 35}
-                    y={rightLabelY - 10}
-                    width="70"
-                    height="20"
+                    x={rightLabelX - 25}
+                    y={rightLabelY - 6}
+                    width="50"
+                    height="12"
                     fill="white"
                     fillOpacity="0.8"
-                    rx="4"
+                    rx="3"
                   />
                   
                   {/* Right dimension text */}
@@ -1288,7 +1288,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     x={rightLabelX}
                     y={rightLabelY}
                     fill="#007AFF"
-                    fontSize="12"
+                    fontSize="7"
                     fontWeight="bold"
                     textAnchor="middle"
                     dominantBaseline="central"
