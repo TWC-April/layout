@@ -17,6 +17,7 @@ interface FloorPlanCanvasProps {
   onFixtureRotateComplete?: () => void;
   onDimensionLineDelete?: (id: string) => void;
   onDimensionLabelMove?: (id: string, position: Position) => void;
+  onCenterLineUpdate?: (id: string, start: Position, end: Position) => void;
   placementArea?: PlacementArea | null;
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
   isAddingFixtureDimension?: boolean;
@@ -51,6 +52,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onFixtureRotateComplete,
   onDimensionLineDelete,
   onDimensionLabelMove,
+  onCenterLineUpdate,
   placementArea,
   onDisplayedImageSizeChange,
   isAddingFixtureDimension = false,
@@ -76,6 +78,64 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   const lastStateUpdateTime = useRef<number>(0);
   const isDeletingRef = useRef<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const [draggingCenterLinePoint, setDraggingCenterLinePoint] = useState<{ lineId: string; point: 'start' | 'end' } | null>(null);
+  const [centerLineDragOffset, setCenterLineDragOffset] = useState<Position>({ x: 0, y: 0 });
+
+  // Handle center line point dragging
+  const handleCenterLinePointMouseDown = useCallback((e: React.MouseEvent, lineId: string, point: 'start' | 'end', pointX: number, pointY: number) => {
+    if (!onCenterLineUpdate || isAddingCenterLine) return;
+    e.stopPropagation();
+    const svgElement = e.currentTarget.closest('svg');
+    if (!svgElement) return;
+    const svgRect = svgElement.getBoundingClientRect();
+    const offsetX = e.clientX - svgRect.left - pointX;
+    const offsetY = e.clientY - svgRect.top - pointY;
+    setDraggingCenterLinePoint({ lineId, point });
+    setCenterLineDragOffset({ x: offsetX, y: offsetY });
+  }, [onCenterLineUpdate, isAddingCenterLine]);
+
+  const handleCenterLineMouseMove = useCallback((e: MouseEvent) => {
+    if (!draggingCenterLinePoint || !onCenterLineUpdate || !displayedImageSize || !scaleInfo) return;
+    
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+    
+    const x = (e.clientX - canvasRect.left) / zoomLevel;
+    const y = (e.clientY - canvasRect.top) / zoomLevel;
+    
+    const line = centerLines.find(l => l.id === draggingCenterLinePoint.lineId);
+    if (!line) return;
+    
+    // Convert from displayed pixels to calibration pixels
+    const scaleX = displayedImageSize.width / line.imageWidth;
+    const scaleY = displayedImageSize.height / line.imageHeight;
+    const calibrationX = (x - centerLineDragOffset.x) / scaleX;
+    const calibrationY = (y - centerLineDragOffset.y) / scaleY;
+    
+    const newPos: Position = { x: calibrationX, y: calibrationY };
+    
+    if (draggingCenterLinePoint.point === 'start') {
+      onCenterLineUpdate(draggingCenterLinePoint.lineId, newPos, line.end);
+    } else {
+      onCenterLineUpdate(draggingCenterLinePoint.lineId, line.start, newPos);
+    }
+  }, [draggingCenterLinePoint, centerLineDragOffset, onCenterLineUpdate, displayedImageSize, scaleInfo, centerLines, zoomLevel]);
+
+  const handleCenterLineMouseUp = useCallback(() => {
+    setDraggingCenterLinePoint(null);
+    setCenterLineDragOffset({ x: 0, y: 0 });
+  }, []);
+
+  React.useEffect(() => {
+    if (draggingCenterLinePoint) {
+      window.addEventListener('mousemove', handleCenterLineMouseMove);
+      window.addEventListener('mouseup', handleCenterLineMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleCenterLineMouseMove);
+        window.removeEventListener('mouseup', handleCenterLineMouseUp);
+      };
+    }
+  }, [draggingCenterLinePoint, handleCenterLineMouseMove, handleCenterLineMouseUp]);
 
   const handleImageLoad = useCallback(() => {
     if (imageRef.current) {
@@ -1190,6 +1250,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               const centerLabelX = scaledCenterX;
               const centerLabelY = scaledCenterY;
               
+
               return (
                 <g key={line.id}>
                   {/* Main line connecting start and end points */}
@@ -1220,6 +1281,26 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     cy={scaledCenterY}
                     r="4"
                     fill="#007AFF"
+                  />
+                  
+                  {/* Draggable start point */}
+                  <circle
+                    cx={scaledStartX}
+                    cy={scaledStartY}
+                    r="6"
+                    fill="#007AFF"
+                    style={{ cursor: 'move', pointerEvents: 'auto' }}
+                    onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'start', scaledStartX, scaledStartY)}
+                  />
+                  
+                  {/* Draggable end point */}
+                  <circle
+                    cx={scaledEndX}
+                    cy={scaledEndY}
+                    r="6"
+                    fill="#007AFF"
+                    style={{ cursor: 'move', pointerEvents: 'auto' }}
+                    onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'end', scaledEndX, scaledEndY)}
                   />
                   
                   {/* Left dimension label background */}

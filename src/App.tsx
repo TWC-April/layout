@@ -523,6 +523,46 @@ function App() {
     });
   };
 
+  const handleCenterLineUpdate = useCallback((id: string, start: Position, end: Position) => {
+    if (!state.scaleInfo) return;
+    
+    setState((prev) => {
+      const line = prev.centerLines.find(l => l.id === id);
+      if (!line) return prev;
+      
+      // Recalculate center point, dimensions, etc.
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      const centerPoint: Position = { x: midX, y: midY };
+      
+      const pixelLength = Math.sqrt(
+        Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+      );
+      
+      const totalLength = pixelLength / state.scaleInfo!.pixelsPerMillimeter;
+      const halfLength = totalLength / 2;
+      const centerLinePixelLength = Math.max(20, pixelLength * 0.1);
+      
+      const updatedLine: CenterLine = {
+        ...line,
+        start,
+        end,
+        centerPoint,
+        totalLength,
+        leftDimension: halfLength,
+        rightDimension: halfLength,
+        centerLineLength: centerLinePixelLength,
+      };
+      
+      const newState = {
+        ...prev,
+        centerLines: prev.centerLines.map(l => l.id === id ? updatedLine : l),
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+  }, [state.scaleInfo]);
+
   const handleCenterLineComplete = (centerLine: CenterLine) => {
     setState((prev) => {
       const newState = {
@@ -822,6 +862,7 @@ function App() {
                     onFloorPlanMouseMove={handleFloorPlanMouseMove}
                     dimensionPreviewState={dimensionPreviewState || undefined}
                     centerLinePreviewState={centerLinePreviewState || undefined}
+                    onCenterLineUpdate={handleCenterLineUpdate}
                     onDimensionLineDelete={handleDimensionLineDelete}
                     onDimensionLabelMove={handleDimensionLabelMove}
                   />

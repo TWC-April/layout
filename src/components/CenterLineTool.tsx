@@ -168,15 +168,15 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
   }, [startPos, endPos, isShiftPressed, scaleInfo, displayedImageSize, constrainToStraightLine]);
 
   // Expose handlers via ref
-  useImperativeHandle(ref, () => {
-    // Convert startPos and endPos to displayed pixels for preview consistency
-    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
-    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
-    
-    return {
-      handleFloorPlanClick,
-      handleFloorPlanMouseMove,
-      getPreviewState: () => ({
+  useImperativeHandle(ref, () => ({
+    handleFloorPlanClick,
+    handleFloorPlanMouseMove,
+    getPreviewState: () => {
+      // Convert startPos from calibration pixels to displayed pixels for preview
+      const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+      const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+      
+      return {
         startPos: startPos ? {
           x: startPos.x * scaleX,
           y: startPos.y * scaleY,
@@ -186,9 +186,9 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
           x: endPos.x * scaleX,
           y: endPos.y * scaleY,
         } : null,
-      }),
-    };
-  }, [handleFloorPlanClick, handleFloorPlanMouseMove, startPos, endPos, currentPos, displayedImageSize, scaleInfo]);
+      };
+    },
+  }), [handleFloorPlanClick, handleFloorPlanMouseMove, startPos, endPos, currentPos, displayedImageSize, scaleInfo]);
 
   const handleReset = useCallback(() => {
     setStartPos(null);
