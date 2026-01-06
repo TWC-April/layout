@@ -80,6 +80,30 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const [draggingCenterLinePoint, setDraggingCenterLinePoint] = useState<{ lineId: string; point: 'start' | 'end' } | null>(null);
   const [centerLineDragOffset, setCenterLineDragOffset] = useState<Position>({ x: 0, y: 0 });
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+  // Handle Shift key for straight line constraint
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' && !e.repeat) {
+        setIsShiftPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   // Handle center line point dragging
   const handleCenterLinePointMouseDown = useCallback((e: React.MouseEvent, lineId: string, point: 'start' | 'end', pointX: number, pointY: number) => {
@@ -109,8 +133,24 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     // Convert from displayed pixels to calibration pixels
     const scaleX = displayedImageSize.width / line.imageWidth;
     const scaleY = displayedImageSize.height / line.imageHeight;
-    const calibrationX = (x - centerLineDragOffset.x) / scaleX;
-    const calibrationY = (y - centerLineDragOffset.y) / scaleY;
+    let calibrationX = (x - centerLineDragOffset.x) / scaleX;
+    let calibrationY = (y - centerLineDragOffset.y) / scaleY;
+    
+    // Apply Shift constraint for straight line (horizontal or vertical)
+    if (isShiftPressed) {
+      const otherPoint = draggingCenterLinePoint.point === 'start' ? line.end : line.start;
+      const dx = Math.abs(calibrationX - otherPoint.x);
+      const dy = Math.abs(calibrationY - otherPoint.y);
+      
+      // Constrain to the direction that's closer to the mouse
+      if (dx > dy) {
+        // Horizontal line - keep Y the same as other point
+        calibrationY = otherPoint.y;
+      } else {
+        // Vertical line - keep X the same as other point
+        calibrationX = otherPoint.x;
+      }
+    }
     
     const newPos: Position = { x: calibrationX, y: calibrationY };
     
@@ -119,7 +159,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     } else {
       onCenterLineUpdate(draggingCenterLinePoint.lineId, line.start, newPos);
     }
-  }, [draggingCenterLinePoint, centerLineDragOffset, onCenterLineUpdate, displayedImageSize, scaleInfo, centerLines, zoomLevel]);
+  }, [draggingCenterLinePoint, centerLineDragOffset, isShiftPressed, onCenterLineUpdate, displayedImageSize, scaleInfo, centerLines, zoomLevel]);
 
   const handleCenterLineMouseUp = useCallback(() => {
     setDraggingCenterLinePoint(null);
@@ -1287,7 +1327,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   <circle
                     cx={scaledStartX}
                     cy={scaledStartY}
-                    r="6"
+                    r="3"
                     fill="#007AFF"
                     style={{ cursor: 'move', pointerEvents: 'auto' }}
                     onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'start', scaledStartX, scaledStartY)}
@@ -1297,7 +1337,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   <circle
                     cx={scaledEndX}
                     cy={scaledEndY}
-                    r="6"
+                    r="3"
                     fill="#007AFF"
                     style={{ cursor: 'move', pointerEvents: 'auto' }}
                     onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'end', scaledEndX, scaledEndY)}
