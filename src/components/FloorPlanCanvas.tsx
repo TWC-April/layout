@@ -18,6 +18,8 @@ interface FloorPlanCanvasProps {
   onDimensionLineDelete?: (id: string) => void;
   onDimensionLabelMove?: (id: string, position: Position) => void;
   onCenterLineUpdate?: (id: string, start: Position, end: Position) => void;
+  onCenterLineDelete?: (id: string) => void;
+  onCenterLineMove?: (id: string, deltaX: number, deltaY: number) => void;
   placementArea?: PlacementArea | null;
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
   isAddingFixtureDimension?: boolean;
@@ -53,6 +55,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onDimensionLineDelete,
   onDimensionLabelMove,
   onCenterLineUpdate,
+  onCenterLineDelete,
+  onCenterLineMove,
   placementArea,
   onDisplayedImageSizeChange,
   isAddingFixtureDimension = false,
@@ -81,6 +85,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   const [draggingCenterLinePoint, setDraggingCenterLinePoint] = useState<{ lineId: string; point: 'start' | 'end' } | null>(null);
   const [centerLineDragOffset, setCenterLineDragOffset] = useState<Position>({ x: 0, y: 0 });
   const [isShiftPressed, setIsShiftPressed] = useState(false);
+  const [draggingCenterLine, setDraggingCenterLine] = useState<{ lineId: string; startPos: Position; endPos: Position } | null>(null);
+  const [centerLineMoveOffset, setCenterLineMoveOffset] = useState<Position>({ x: 0, y: 0 });
 
   // Handle Shift key for straight line constraint
   React.useEffect(() => {
@@ -187,6 +193,60 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       };
     }
   }, [draggingCenterLinePoint, handleCenterLineMouseMove, handleCenterLineMouseUp]);
+
+  // Handle center line move (entire line, keeping dimensions)
+  const handleCenterLineMoveMouseMove = useCallback((e: MouseEvent) => {
+    if (!draggingCenterLine || !onCenterLineMove || !displayedImageSize || !scaleInfo) return;
+    
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+    
+    const mouseX = (e.clientX - canvasRect.left) / zoomLevel;
+    const mouseY = (e.clientY - canvasRect.top) / zoomLevel;
+    
+    const line = centerLines.find(l => l.id === draggingCenterLine.lineId);
+    if (!line) return;
+    
+    // Calculate center of line in displayed pixels
+    const scaleX = displayedImageSize.width / line.imageWidth;
+    const scaleY = displayedImageSize.height / line.imageHeight;
+    const scaledStartX = draggingCenterLine.startPos.x * scaleX;
+    const scaledStartY = draggingCenterLine.startPos.y * scaleY;
+    const scaledEndX = draggingCenterLine.endPos.x * scaleX;
+    const scaledEndY = draggingCenterLine.endPos.y * scaleY;
+    const centerX = (scaledStartX + scaledEndX) / 2;
+    const centerY = (scaledStartY + scaledEndY) / 2;
+    
+    // Calculate new center position
+    const newCenterX = mouseX - centerLineMoveOffset.x;
+    const newCenterY = mouseY - centerLineMoveOffset.y;
+    
+    // Calculate delta in displayed pixels
+    const deltaX = newCenterX - centerX;
+    const deltaY = newCenterY - centerY;
+    
+    // Convert delta to calibration pixels
+    const deltaCalibrationX = deltaX / scaleX;
+    const deltaCalibrationY = deltaY / scaleY;
+    
+    onCenterLineMove(draggingCenterLine.lineId, deltaCalibrationX, deltaCalibrationY);
+  }, [draggingCenterLine, centerLineMoveOffset, onCenterLineMove, displayedImageSize, scaleInfo, centerLines, zoomLevel]);
+
+  const handleCenterLineMoveMouseUp = useCallback(() => {
+    setDraggingCenterLine(null);
+    setCenterLineMoveOffset({ x: 0, y: 0 });
+  }, []);
+
+  React.useEffect(() => {
+    if (draggingCenterLine) {
+      window.addEventListener('mousemove', handleCenterLineMoveMouseMove);
+      window.addEventListener('mouseup', handleCenterLineMoveMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleCenterLineMoveMouseMove);
+        window.removeEventListener('mouseup', handleCenterLineMoveMouseUp);
+      };
+    }
+  }, [draggingCenterLine, handleCenterLineMoveMouseMove, handleCenterLineMoveMouseUp]);
 
   const handleImageLoad = useCallback(() => {
     if (imageRef.current) {
@@ -1338,7 +1398,44 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     rx="3"
                   />
                   
-                  {/* Main line connecting start and end points */}
+                  {/* Main line connecting start and end points - draggable for moving entire line */}
+                  <line
+                    x1={scaledStartX}
+                    y1={scaledStartY}
+                    x2={scaledEndX}
+                    y2={scaledEndY}
+                    stroke="#007AFF"
+                    strokeWidth="8"
+                    strokeDasharray="5,5"
+                    opacity="0"
+                    style={{ cursor: 'move', pointerEvents: 'auto' }}
+                    onMouseDown={(e) => {
+                      // Don't start drag on double-click
+                      if (e.detail === 2) return;
+                      if (!onCenterLineMove || isAddingCenterLine) return;
+                      e.stopPropagation();
+                      const canvasRect = canvasRef.current?.getBoundingClientRect();
+                      if (!canvasRect) return;
+                      
+                      const mouseX = (e.clientX - canvasRect.left) / zoomLevel;
+                      const mouseY = (e.clientY - canvasRect.top) / zoomLevel;
+                      
+                      // Calculate offset from center of line
+                      const centerX = (scaledStartX + scaledEndX) / 2;
+                      const centerY = (scaledStartY + scaledEndY) / 2;
+                      const offsetX = mouseX - centerX;
+                      const offsetY = mouseY - centerY;
+                      
+                      setDraggingCenterLine({ lineId: line.id, startPos: line.start, endPos: line.end });
+                      setCenterLineMoveOffset({ x: offsetX, y: offsetY });
+                    }}
+                    onDoubleClick={(e) => {
+                      if (!onCenterLineDelete || isAddingCenterLine) return;
+                      e.stopPropagation();
+                      onCenterLineDelete(line.id);
+                    }}
+                  />
+                  {/* Visible main line */}
                   <line
                     x1={scaledStartX}
                     y1={scaledStartY}
@@ -1348,6 +1445,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     strokeWidth="1"
                     strokeDasharray="5,5"
                     opacity="0.5"
+                    style={{ pointerEvents: 'none' }}
                   />
                   
                   {/* Center line (perpendicular) */}

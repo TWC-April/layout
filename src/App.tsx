@@ -563,6 +563,55 @@ function App() {
     });
   }, [state.scaleInfo]);
 
+  const handleCenterLineDelete = useCallback((id: string) => {
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        centerLines: prev.centerLines.filter(l => l.id !== id),
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+  }, []);
+
+  const handleCenterLineMove = useCallback((id: string, deltaX: number, deltaY: number) => {
+    setState((prev) => {
+      const line = prev.centerLines.find(l => l.id === id);
+      if (!line) return prev;
+      
+      // Move both points by the same delta, keeping dimensions unchanged
+      const newStart: Position = {
+        x: line.start.x + deltaX,
+        y: line.start.y + deltaY,
+      };
+      const newEnd: Position = {
+        x: line.end.x + deltaX,
+        y: line.end.y + deltaY,
+      };
+      
+      // Recalculate center point
+      const midX = (newStart.x + newEnd.x) / 2;
+      const midY = (newStart.y + newEnd.y) / 2;
+      const centerPoint: Position = { x: midX, y: midY };
+      
+      // Dimensions stay the same
+      const updatedLine: CenterLine = {
+        ...line,
+        start: newStart,
+        end: newEnd,
+        centerPoint,
+        // Keep all dimension values the same
+      };
+      
+      const newState = {
+        ...prev,
+        centerLines: prev.centerLines.map(l => l.id === id ? updatedLine : l),
+      };
+      saveToHistory(newState);
+      return newState;
+    });
+  }, []);
+
   const handleCenterLineComplete = (centerLine: CenterLine) => {
     setState((prev) => {
       const newState = {
@@ -863,6 +912,8 @@ function App() {
                     dimensionPreviewState={dimensionPreviewState || undefined}
                     centerLinePreviewState={centerLinePreviewState || undefined}
                     onCenterLineUpdate={handleCenterLineUpdate}
+                    onCenterLineDelete={handleCenterLineDelete}
+                    onCenterLineMove={handleCenterLineMove}
                     onDimensionLineDelete={handleDimensionLineDelete}
                     onDimensionLabelMove={handleDimensionLabelMove}
                   />
