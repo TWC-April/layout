@@ -97,6 +97,8 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
         };
         setCurrentPos(constrainedDisplayPos);
       } else {
+        // Ensure currentPos matches the calibration position conversion
+        // This ensures preview and final line use the same coordinates
         setCurrentPos(position);
       }
       setEndPos(calibrationPos);
@@ -166,15 +168,27 @@ export const CenterLineTool = forwardRef<CenterLineToolHandle, CenterLineToolPro
   }, [startPos, endPos, isShiftPressed, scaleInfo, displayedImageSize, constrainToStraightLine]);
 
   // Expose handlers via ref
-  useImperativeHandle(ref, () => ({
-    handleFloorPlanClick,
-    handleFloorPlanMouseMove,
-    getPreviewState: () => ({
-      startPos, // Keep in calibration pixels (will be converted in rendering)
-      currentPos, // Already in displayed pixels
-      endPos, // Keep in calibration pixels (will be converted in rendering)
-    }),
-  }), [handleFloorPlanClick, handleFloorPlanMouseMove, startPos, endPos, currentPos]);
+  useImperativeHandle(ref, () => {
+    // Convert startPos and endPos to displayed pixels for preview consistency
+    const scaleX = displayedImageSize.width / scaleInfo.imageWidth;
+    const scaleY = displayedImageSize.height / scaleInfo.imageHeight;
+    
+    return {
+      handleFloorPlanClick,
+      handleFloorPlanMouseMove,
+      getPreviewState: () => ({
+        startPos: startPos ? {
+          x: startPos.x * scaleX,
+          y: startPos.y * scaleY,
+        } : null,
+        currentPos, // Already in displayed pixels
+        endPos: endPos ? {
+          x: endPos.x * scaleX,
+          y: endPos.y * scaleY,
+        } : null,
+      }),
+    };
+  }, [handleFloorPlanClick, handleFloorPlanMouseMove, startPos, endPos, currentPos, displayedImageSize, scaleInfo]);
 
   const handleReset = useCallback(() => {
     setStartPos(null);

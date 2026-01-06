@@ -859,8 +859,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               <>
                 {/* Preview line from start to current position */}
                 <line
-                  x1={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
-                  y1={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                  x1={centerLinePreviewState.startPos.x}
+                  y1={centerLinePreviewState.startPos.y}
                   x2={centerLinePreviewState.currentPos.x}
                   y2={centerLinePreviewState.currentPos.y}
                   stroke="#ff4444"
@@ -870,16 +870,16 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 {/* Start point crosshair */}
                 <g stroke="#ff4444" strokeWidth="2" strokeLinecap="round">
                   <line
-                    x1={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) - 4.2}
-                    y1={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
-                    x2={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) + 4.2}
-                    y2={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                    x1={centerLinePreviewState.startPos.x - 4.2}
+                    y1={centerLinePreviewState.startPos.y}
+                    x2={centerLinePreviewState.startPos.x + 4.2}
+                    y2={centerLinePreviewState.startPos.y}
                   />
                   <line
-                    x1={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
-                    y1={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) - 4.2}
-                    x2={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
-                    y2={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) + 4.2}
+                    x1={centerLinePreviewState.startPos.x}
+                    y1={centerLinePreviewState.startPos.y - 4.2}
+                    x2={centerLinePreviewState.startPos.x}
+                    y2={centerLinePreviewState.startPos.y + 4.2}
                   />
                 </g>
                 {/* Current position crosshair */}
