@@ -1471,22 +1471,50 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     fill="#007AFF"
                   />
                   
-                  {/* Draggable start point */}
-                  <circle
-                    cx={scaledStartX}
-                    cy={scaledStartY}
-                    r="3"
-                    fill="#007AFF"
+                  {/* Draggable start point - line handle */}
+                  <line
+                    x1={scaledStartX - 6}
+                    y1={scaledStartY - 6}
+                    x2={scaledStartX + 6}
+                    y2={scaledStartY + 6}
+                    stroke="#007AFF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    style={{ cursor: 'move', pointerEvents: 'auto' }}
+                    onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'start', scaledStartX, scaledStartY)}
+                  />
+                  <line
+                    x1={scaledStartX - 6}
+                    y1={scaledStartY + 6}
+                    x2={scaledStartX + 6}
+                    y2={scaledStartY - 6}
+                    stroke="#007AFF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
                     style={{ cursor: 'move', pointerEvents: 'auto' }}
                     onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'start', scaledStartX, scaledStartY)}
                   />
                   
-                  {/* Draggable end point */}
-                  <circle
-                    cx={scaledEndX}
-                    cy={scaledEndY}
-                    r="3"
-                    fill="#007AFF"
+                  {/* Draggable end point - line handle */}
+                  <line
+                    x1={scaledEndX - 6}
+                    y1={scaledEndY - 6}
+                    x2={scaledEndX + 6}
+                    y2={scaledEndY + 6}
+                    stroke="#007AFF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    style={{ cursor: 'move', pointerEvents: 'auto' }}
+                    onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'end', scaledEndX, scaledEndY)}
+                  />
+                  <line
+                    x1={scaledEndX - 6}
+                    y1={scaledEndY + 6}
+                    x2={scaledEndX + 6}
+                    y2={scaledEndY - 6}
+                    stroke="#007AFF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
                     style={{ cursor: 'move', pointerEvents: 'auto' }}
                     onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'end', scaledEndX, scaledEndY)}
                   />
