@@ -109,14 +109,20 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   const handleCenterLinePointMouseDown = useCallback((e: React.MouseEvent, lineId: string, point: 'start' | 'end', pointX: number, pointY: number) => {
     if (!onCenterLineUpdate || isAddingCenterLine) return;
     e.stopPropagation();
-    const svgElement = e.currentTarget.closest('svg');
-    if (!svgElement) return;
-    const svgRect = svgElement.getBoundingClientRect();
-    const offsetX = e.clientX - svgRect.left - pointX;
-    const offsetY = e.clientY - svgRect.top - pointY;
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+    
+    // Calculate mouse position in displayed pixels (accounting for zoom)
+    const mouseX = (e.clientX - canvasRect.left) / zoomLevel;
+    const mouseY = (e.clientY - canvasRect.top) / zoomLevel;
+    
+    // Offset is the difference between mouse position and point position
+    const offsetX = mouseX - pointX;
+    const offsetY = mouseY - pointY;
+    
     setDraggingCenterLinePoint({ lineId, point });
     setCenterLineDragOffset({ x: offsetX, y: offsetY });
-  }, [onCenterLineUpdate, isAddingCenterLine]);
+  }, [onCenterLineUpdate, isAddingCenterLine, zoomLevel]);
 
   const handleCenterLineMouseMove = useCallback((e: MouseEvent) => {
     if (!draggingCenterLinePoint || !onCenterLineUpdate || !displayedImageSize || !scaleInfo) return;
@@ -124,8 +130,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     const canvasRect = canvasRef.current?.getBoundingClientRect();
     if (!canvasRect) return;
     
-    const x = (e.clientX - canvasRect.left) / zoomLevel;
-    const y = (e.clientY - canvasRect.top) / zoomLevel;
+    // Calculate mouse position in displayed pixels (accounting for zoom)
+    const mouseX = (e.clientX - canvasRect.left) / zoomLevel;
+    const mouseY = (e.clientY - canvasRect.top) / zoomLevel;
+    
+    // Calculate point position by subtracting the offset
+    const pointX = mouseX - centerLineDragOffset.x;
+    const pointY = mouseY - centerLineDragOffset.y;
     
     const line = centerLines.find(l => l.id === draggingCenterLinePoint.lineId);
     if (!line) return;
@@ -133,8 +144,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     // Convert from displayed pixels to calibration pixels
     const scaleX = displayedImageSize.width / line.imageWidth;
     const scaleY = displayedImageSize.height / line.imageHeight;
-    let calibrationX = (x - centerLineDragOffset.x) / scaleX;
-    let calibrationY = (y - centerLineDragOffset.y) / scaleY;
+    let calibrationX = pointX / scaleX;
+    let calibrationY = pointY / scaleY;
     
     // Apply Shift constraint for straight line (horizontal or vertical)
     if (isShiftPressed) {
@@ -1293,6 +1304,40 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
 
               return (
                 <g key={line.id}>
+                  {/* White backgrounds - render first so they appear behind lines */}
+                  {/* Left dimension label background */}
+                  <rect
+                    x={leftLabelX - 35}
+                    y={leftLabelY - 10}
+                    width="70"
+                    height="20"
+                    fill="white"
+                    fillOpacity="0.8"
+                    rx="4"
+                  />
+                  
+                  {/* Center label background (CL) */}
+                  <rect
+                    x={centerLabelX - 10}
+                    y={centerLabelY - 6}
+                    width="20"
+                    height="12"
+                    fill="white"
+                    fillOpacity="0.8"
+                    rx="3"
+                  />
+                  
+                  {/* Right dimension label background */}
+                  <rect
+                    x={rightLabelX - 25}
+                    y={rightLabelY - 6}
+                    width="50"
+                    height="12"
+                    fill="white"
+                    fillOpacity="0.8"
+                    rx="3"
+                  />
+                  
                   {/* Main line connecting start and end points */}
                   <line
                     x1={scaledStartX}
@@ -1343,17 +1388,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     onMouseDown={(e) => handleCenterLinePointMouseDown(e, line.id, 'end', scaledEndX, scaledEndY)}
                   />
                   
-                  {/* Left dimension label background */}
-                  <rect
-                    x={leftLabelX - 35}
-                    y={leftLabelY - 10}
-                    width="70"
-                    height="20"
-                    fill="white"
-                    fillOpacity="0.8"
-                    rx="4"
-                  />
-                  
                   {/* Left dimension text */}
                   <text
                     x={leftLabelX}
@@ -1368,17 +1402,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                     {Math.round(line.leftDimension).toLocaleString()} (EQ)
                   </text>
                   
-                  {/* Center label background (CL) */}
-                  <rect
-                    x={centerLabelX - 10}
-                    y={centerLabelY - 6}
-                    width="20"
-                    height="12"
-                    fill="white"
-                    fillOpacity="0.8"
-                    rx="3"
-                  />
-                  
                   {/* Center label text (CL) */}
                   <text
                     x={centerLabelX}
@@ -1392,17 +1415,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                   >
                     CL
                   </text>
-                  
-                  {/* Right dimension label background */}
-                  <rect
-                    x={rightLabelX - 25}
-                    y={rightLabelY - 6}
-                    width="50"
-                    height="12"
-                    fill="white"
-                    fillOpacity="0.8"
-                    rx="3"
-                  />
                   
                   {/* Right dimension text */}
                   <text
