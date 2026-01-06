@@ -579,14 +579,18 @@ function App() {
       const line = prev.centerLines.find(l => l.id === id);
       if (!line) return prev;
       
-      // Move both points by the same delta, keeping dimensions unchanged
+      // Get the current positions (may have been updated from previous move)
+      const currentStart = line.start;
+      const currentEnd = line.end;
+      
+      // Move both points by the delta, keeping dimensions unchanged
       const newStart: Position = {
-        x: line.start.x + deltaX,
-        y: line.start.y + deltaY,
+        x: currentStart.x + deltaX,
+        y: currentStart.y + deltaY,
       };
       const newEnd: Position = {
-        x: line.end.x + deltaX,
-        y: line.end.y + deltaY,
+        x: currentEnd.x + deltaX,
+        y: currentEnd.y + deltaY,
       };
       
       // Recalculate center point
@@ -607,8 +611,16 @@ function App() {
         ...prev,
         centerLines: prev.centerLines.map(l => l.id === id ? updatedLine : l),
       };
-      saveToHistory(newState);
+      // Don't save to history on every mouse move - only on mouse up
       return newState;
+    });
+  }, []);
+
+  const handleCenterLineMoveComplete = useCallback(() => {
+    // Save to history when move is complete
+    setState((prev) => {
+      saveToHistory(prev);
+      return prev;
     });
   }, []);
 
@@ -914,6 +926,7 @@ function App() {
                     onCenterLineUpdate={handleCenterLineUpdate}
                     onCenterLineDelete={handleCenterLineDelete}
                     onCenterLineMove={handleCenterLineMove}
+                    onCenterLineMoveComplete={handleCenterLineMoveComplete}
                     onDimensionLineDelete={handleDimensionLineDelete}
                     onDimensionLabelMove={handleDimensionLabelMove}
                   />

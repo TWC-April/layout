@@ -20,6 +20,7 @@ interface FloorPlanCanvasProps {
   onCenterLineUpdate?: (id: string, start: Position, end: Position) => void;
   onCenterLineDelete?: (id: string) => void;
   onCenterLineMove?: (id: string, deltaX: number, deltaY: number) => void;
+  onCenterLineMoveComplete?: () => void;
   placementArea?: PlacementArea | null;
   onDisplayedImageSizeChange?: (size: { width: number; height: number }) => void;
   isAddingFixtureDimension?: boolean;
@@ -57,6 +58,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onCenterLineUpdate,
   onCenterLineDelete,
   onCenterLineMove,
+  onCenterLineMoveComplete,
   placementArea,
   onDisplayedImageSizeChange,
   isAddingFixtureDimension = false,
@@ -207,23 +209,23 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     const line = centerLines.find(l => l.id === draggingCenterLine.lineId);
     if (!line) return;
     
-    // Calculate center of line in displayed pixels
+    // Use current line positions (they may have been updated)
     const scaleX = displayedImageSize.width / line.imageWidth;
     const scaleY = displayedImageSize.height / line.imageHeight;
-    const scaledStartX = draggingCenterLine.startPos.x * scaleX;
-    const scaledStartY = draggingCenterLine.startPos.y * scaleY;
-    const scaledEndX = draggingCenterLine.endPos.x * scaleX;
-    const scaledEndY = draggingCenterLine.endPos.y * scaleY;
-    const centerX = (scaledStartX + scaledEndX) / 2;
-    const centerY = (scaledStartY + scaledEndY) / 2;
+    const scaledStartX = line.start.x * scaleX;
+    const scaledStartY = line.start.y * scaleY;
+    const scaledEndX = line.end.x * scaleX;
+    const scaledEndY = line.end.y * scaleY;
+    const currentCenterX = (scaledStartX + scaledEndX) / 2;
+    const currentCenterY = (scaledStartY + scaledEndY) / 2;
     
-    // Calculate new center position
-    const newCenterX = mouseX - centerLineMoveOffset.x;
-    const newCenterY = mouseY - centerLineMoveOffset.y;
+    // Calculate where the center should be based on mouse position and offset
+    const targetCenterX = mouseX - centerLineMoveOffset.x;
+    const targetCenterY = mouseY - centerLineMoveOffset.y;
     
-    // Calculate delta in displayed pixels
-    const deltaX = newCenterX - centerX;
-    const deltaY = newCenterY - centerY;
+    // Calculate delta from current center to target center
+    const deltaX = targetCenterX - currentCenterX;
+    const deltaY = targetCenterY - currentCenterY;
     
     // Convert delta to calibration pixels
     const deltaCalibrationX = deltaX / scaleX;
@@ -233,9 +235,12 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   }, [draggingCenterLine, centerLineMoveOffset, onCenterLineMove, displayedImageSize, scaleInfo, centerLines, zoomLevel]);
 
   const handleCenterLineMoveMouseUp = useCallback(() => {
+    if (draggingCenterLine && onCenterLineMoveComplete) {
+      onCenterLineMoveComplete();
+    }
     setDraggingCenterLine(null);
     setCenterLineMoveOffset({ x: 0, y: 0 });
-  }, []);
+  }, [draggingCenterLine, onCenterLineMoveComplete]);
 
   React.useEffect(() => {
     if (draggingCenterLine) {
