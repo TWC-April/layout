@@ -29,6 +29,11 @@ interface FloorPlanCanvasProps {
     endPos: Position | null;
     isShiftPressed: boolean;
   };
+  centerLinePreviewState?: {
+    startPos: Position | null;
+    currentPos: Position | null;
+    endPos: Position | null;
+  };
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
@@ -53,6 +58,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   onFloorPlanClick,
   onFloorPlanMouseMove,
   dimensionPreviewState,
+  centerLinePreviewState,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -420,9 +426,9 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
             }
           }}
           onMouseMove={(e) => {
-            // Handle mouse move for dimension preview
+            // Handle mouse move for dimension and center line preview
             // Skip if user is interacting with input fields or other UI elements
-            if (isAddingFixtureDimension && onFloorPlanMouseMove && displayedImageSize && scaleInfo) {
+            if ((isAddingFixtureDimension || isAddingCenterLine) && onFloorPlanMouseMove && displayedImageSize && scaleInfo) {
               const target = e.target as HTMLElement;
               // Don't process mouse move if hovering over input fields or buttons
               if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.closest('input') || target.closest('button')) {
@@ -832,6 +838,67 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
                 })()}
               </>
             )}
+            </svg>
+          )}
+
+        {/* Render center line preview */}
+        {isAddingCenterLine && centerLinePreviewState && displayedImageSize && scaleInfo && (
+          <svg
+            className="center-line-preview-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: displayedImageSize.width,
+              height: displayedImageSize.height,
+              pointerEvents: 'none',
+              zIndex: 1000,
+            }}
+          >
+            {centerLinePreviewState.startPos && centerLinePreviewState.currentPos && (
+              <>
+                {/* Preview line from start to current position */}
+                <line
+                  x1={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
+                  y1={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                  x2={centerLinePreviewState.currentPos.x}
+                  y2={centerLinePreviewState.currentPos.y}
+                  stroke="#ff4444"
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                />
+                {/* Start point crosshair */}
+                <g stroke="#ff4444" strokeWidth="2" strokeLinecap="round">
+                  <line
+                    x1={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) - 4.2}
+                    y1={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                    x2={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth) + 4.2}
+                    y2={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight)}
+                  />
+                  <line
+                    x1={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
+                    y1={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) - 4.2}
+                    x2={centerLinePreviewState.startPos.x * (displayedImageSize.width / scaleInfo.imageWidth)}
+                    y2={centerLinePreviewState.startPos.y * (displayedImageSize.height / scaleInfo.imageHeight) + 4.2}
+                  />
+                </g>
+                {/* Current position crosshair */}
+                <g stroke="#ff4444" strokeWidth="2" strokeLinecap="round">
+                  <line
+                    x1={centerLinePreviewState.currentPos.x - 4.2}
+                    y1={centerLinePreviewState.currentPos.y}
+                    x2={centerLinePreviewState.currentPos.x + 4.2}
+                    y2={centerLinePreviewState.currentPos.y}
+                  />
+                  <line
+                    x1={centerLinePreviewState.currentPos.x}
+                    y1={centerLinePreviewState.currentPos.y - 4.2}
+                    x2={centerLinePreviewState.currentPos.x}
+                    y2={centerLinePreviewState.currentPos.y + 4.2}
+                  />
+                </g>
+              </>
+            )}
           </svg>
         )}
 
@@ -1086,23 +1153,150 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
               const scaleX = displayedImageSize.width / line.imageWidth;
               const scaleY = displayedImageSize.height / line.imageHeight;
               
+              // Scale positions to current displayed size
               const scaledStartX = line.start.x * scaleX;
               const scaledStartY = line.start.y * scaleY;
               const scaledEndX = line.end.x * scaleX;
               const scaledEndY = line.end.y * scaleY;
-
+              const scaledCenterX = line.centerPoint.x * scaleX;
+              const scaledCenterY = line.centerPoint.y * scaleY;
+              
+              // Calculate line angle
+              const dx = scaledEndX - scaledStartX;
+              const dy = scaledEndY - scaledStartY;
+              const lineAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+              const perpendicularAngle = lineAngle + 90;
+              
+              // Calculate center line endpoints (perpendicular line)
+              const centerLineHalfLength = (line.centerLineLength * scaleX) / 2;
+              const perpDx = Math.cos(perpendicularAngle * Math.PI / 180) * centerLineHalfLength;
+              const perpDy = Math.sin(perpendicularAngle * Math.PI / 180) * centerLineHalfLength;
+              
+              const centerLineStartX = scaledCenterX - perpDx;
+              const centerLineStartY = scaledCenterY - perpDy;
+              const centerLineEndX = scaledCenterX + perpDx;
+              const centerLineEndY = scaledCenterY + perpDy;
+              
+              // Calculate positions for dimension labels
+              // Left dimension label (near start point)
+              const leftLabelX = scaledStartX + (scaledCenterX - scaledStartX) / 2;
+              const leftLabelY = scaledStartY + (scaledCenterY - scaledStartY) / 2;
+              
+              // Right dimension label (near end point)
+              const rightLabelX = scaledCenterX + (scaledEndX - scaledCenterX) / 2;
+              const rightLabelY = scaledCenterY + (scaledEndY - scaledCenterY) / 2;
+              
+              // Center label position (at center line)
+              const centerLabelX = scaledCenterX;
+              const centerLabelY = scaledCenterY;
+              
               return (
-                <line
-                  key={line.id}
-                  x1={scaledStartX}
-                  y1={scaledStartY}
-                  x2={scaledEndX}
-                  y2={scaledEndY}
-                  stroke="#8E8E93"
-                  strokeWidth="2"
-                  strokeDasharray="8,4"
-                  opacity="0.6"
-                />
+                <g key={line.id}>
+                  {/* Main line connecting start and end points */}
+                  <line
+                    x1={scaledStartX}
+                    y1={scaledStartY}
+                    x2={scaledEndX}
+                    y2={scaledEndY}
+                    stroke="#007AFF"
+                    strokeWidth="1"
+                    strokeDasharray="5,5"
+                    opacity="0.5"
+                  />
+                  
+                  {/* Center line (perpendicular) */}
+                  <line
+                    x1={centerLineStartX}
+                    y1={centerLineStartY}
+                    x2={centerLineEndX}
+                    y2={centerLineEndY}
+                    stroke="#007AFF"
+                    strokeWidth="2"
+                  />
+                  
+                  {/* Center line marker (CL) */}
+                  <circle
+                    cx={scaledCenterX}
+                    cy={scaledCenterY}
+                    r="4"
+                    fill="#007AFF"
+                  />
+                  
+                  {/* Left dimension label background */}
+                  <rect
+                    x={leftLabelX - 35}
+                    y={leftLabelY - 10}
+                    width="70"
+                    height="20"
+                    fill="white"
+                    fillOpacity="0.8"
+                    rx="4"
+                  />
+                  
+                  {/* Left dimension text */}
+                  <text
+                    x={leftLabelX}
+                    y={leftLabelY}
+                    fill="#007AFF"
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    transform={`rotate(${lineAngle} ${leftLabelX} ${leftLabelY})`}
+                  >
+                    {Math.round(line.leftDimension).toLocaleString()} (EQ)
+                  </text>
+                  
+                  {/* Center label background (CL) */}
+                  <rect
+                    x={centerLabelX - 15}
+                    y={centerLabelY - 10}
+                    width="30"
+                    height="20"
+                    fill="white"
+                    fillOpacity="0.8"
+                    rx="4"
+                  />
+                  
+                  {/* Center label text (CL) */}
+                  <text
+                    x={centerLabelX}
+                    y={centerLabelY}
+                    fill="#007AFF"
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    transform={`rotate(${perpendicularAngle} ${centerLabelX} ${centerLabelY})`}
+                  >
+                    CL
+                  </text>
+                  
+                  {/* Right dimension label background */}
+                  <rect
+                    x={rightLabelX - 35}
+                    y={rightLabelY - 10}
+                    width="70"
+                    height="20"
+                    fill="white"
+                    fillOpacity="0.8"
+                    rx="4"
+                  />
+                  
+                  {/* Right dimension text */}
+                  <text
+                    x={rightLabelX}
+                    y={rightLabelY}
+                    fill="#007AFF"
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    transform={`rotate(${lineAngle} ${rightLabelX} ${rightLabelY})`}
+                  >
+                    {Math.round(line.rightDimension).toLocaleString()} (EQ)
+                  </text>
+                </g>
               );
             })}
           </svg>

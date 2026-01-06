@@ -570,14 +570,22 @@ function App() {
   const handleFloorPlanMouseMove = useCallback((position: Position) => {
     if (state.isAddingFixtureDimension && dimensionToolRef.current) {
       dimensionToolRef.current.handleFloorPlanMouseMove(position);
+    } else if (state.isAddingCenterLine && centerLineToolRef.current) {
+      centerLineToolRef.current.handleFloorPlanMouseMove(position);
     }
-  }, [state.isAddingFixtureDimension]);
+  }, [state.isAddingFixtureDimension, state.isAddingCenterLine]);
 
   const [dimensionPreviewState, setDimensionPreviewState] = useState<{
     startPos: Position | null;
     currentPos: Position | null;
     endPos: Position | null;
     isShiftPressed: boolean;
+  } | null>(null);
+
+  const [centerLinePreviewState, setCenterLinePreviewState] = useState<{
+    startPos: Position | null;
+    currentPos: Position | null;
+    endPos: Position | null;
   } | null>(null);
 
   // Update preview state from dimension tool
@@ -597,6 +605,24 @@ function App() {
       setDimensionPreviewState(null);
     }
   }, [state.isAddingFixtureDimension]);
+
+  // Update preview state from center line tool
+  useEffect(() => {
+    if (state.isAddingCenterLine && centerLineToolRef.current) {
+      const updatePreview = () => {
+        const previewState = centerLineToolRef.current?.getPreviewState();
+        if (previewState) {
+          setCenterLinePreviewState(previewState);
+        }
+      };
+      // Update more frequently for smooth preview
+      const interval = setInterval(updatePreview, 16); // ~60fps
+      updatePreview(); // Initial update
+      return () => clearInterval(interval);
+    } else {
+      setCenterLinePreviewState(null);
+    }
+  }, [state.isAddingCenterLine]);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -795,6 +821,7 @@ function App() {
                     onFloorPlanClick={handleFloorPlanClick}
                     onFloorPlanMouseMove={handleFloorPlanMouseMove}
                     dimensionPreviewState={dimensionPreviewState || undefined}
+                    centerLinePreviewState={centerLinePreviewState || undefined}
                     onDimensionLineDelete={handleDimensionLineDelete}
                     onDimensionLabelMove={handleDimensionLabelMove}
                   />

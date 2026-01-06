@@ -65,6 +65,11 @@ export interface CenterLine {
   id: string;
   start: Position; // Start point on floor plan in calibration pixels
   end: Position; // End point on floor plan in calibration pixels
+  centerPoint: Position; // Midpoint where center line is drawn
+  totalLength: number; // Total distance in mm
+  leftDimension: number; // Left side dimension in mm (should equal rightDimension)
+  rightDimension: number; // Right side dimension in mm (should equal leftDimension)
+  centerLineLength: number; // Length of the center line in pixels (perpendicular line)
   imageWidth: number; // displayed image width in pixels when created
   imageHeight: number; // displayed image height in pixels when created
 }
